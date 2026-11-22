@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buying a Car</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top"><b>Buying a car with insurance and a loan</b><span>a workflow on the owner’s server · the data is shown</span>
+<span class="right everyone"><a href="/" class="nav">All samples</a><a href="tender.html" class="nav">The sealed tender</a><button class="small" id="again">Start again</button></span></header>
+<main>
+<div class="intro">
+<p><b>Five parties, eight steps, one workflow.</b> The motor department publishes the workflow and runs it on its own server. The showroom, the insurer and the bank take part in their roles, and Ravi, the buyer, follows it in his personal agent. Each person approves only their own part, with their own swipe, and every party of the case sees the whole case file.</p>
+<p><span class="everyone">Pick a person on the left to see their screen. In real use each person sees only their own: open it with the links under the list. </span><span id="wf"></span></p>
+<p id="next"></p>
+</div>
+<section class="people card"><h2>People</h2><div id="people"></div></section>
+<section class="card" id="screen"></section>
+<section class="card"><h2>The case file <span class="chip">every party sees it</span></h2><div id="file"></div>
+<h2 style="margin-top:18px">The motor department’s public receipts</h2><p class="meta" style="margin:0 0 6px;color:var(--soft);font-size:13px">Only fingerprints. Each one holds the fingerprint of the one before.</p>
+<div class="receipts" id="receipts"></div><div class="swipe"><button class="small" id="checkLog">Check the chain, and my copy</button><span id="logResult" class="result"></span></div></section>
+</main>
+<script>window.MG = {};</script>
+<script src="/core/stamp.js"></script>
+<script src="/core/swipe.js"></script>
+<script src="/core/workflow.js"></script>
+<script src="ui.js"></script>
+<script>
+const EVERYONE = [
+  { key: 'ravi', person: 'Ravi Kumar', org: 'Sample agent provider', label: 'the buyer · personal agent' },
+  { key: 'meera', person: 'Meera Shah', workId: 'SM-104', org: 'Sunrise Motors', label: 'Sales manager, Sunrise Motors' },
+  { key: 'arjun', person: 'Arjun Rao', workId: 'LI-220', org: 'Lotus Insurance', label: 'Underwriter, Lotus Insurance' },
+  { key: 'kavya', person: 'Kavya Iyer', workId: 'NB-311', org: 'Northbank', label: 'Loan officer, Northbank' },
+  { key: 'anita', person: 'Anita Das', workId: 'MD-017', org: 'Motor Department', label: 'Registration officer, Motor Department' },
+];
+// ?me=<work ID or name>: one person's own screen, as on their own phone or desk.
+const ONLY = UI.q.get('me'), PEOPLE = ONLY ? EVERYONE.filter(p => p.workId === ONLY || p.person === ONLY) : EVERYONE;
+if (ONLY) document.body.classList.add('one');
+const SAMPLE = { price: { car: 'Hatchback, blue, petrol', price: '9,20,000' }, policy: { policy: 'LI-7781', premium: '24,500' }, loan: { loan: '7,00,000', years: '5' }, register: { number: 'KL-07-CX-4410' } };
+const LABEL = { car: 'Car', price: 'Price', policy: 'Policy number', premium: 'Premium', loan: 'Loan', years: 'Years', number: 'Registration number' };
+let moveOn = false, W, KEYS, me = PEOPLE.length === 1 ? PEOPLE[0].key : null, caseId = null, file = null, boxes = {}, fake = null, lastResult = '';
+const $ = id => document.getElementById(id), who = k => PEOPLE.find(p => p.key === k);
+const step = id => MG.flow.step(W, id);
+const show = (s, d) => Object.entries(d || {}).map(([k, v]) => UI.esc(LABEL[k] || k) + ': ' + (s && s.adds && s.adds[k] === 'amount' ? UI.money(v) : UI.esc(v))).join(' · ');
+const basisWords = b => Object.entries(b || {}).map(([id, d]) => Object.keys(d).length ? step(id).does + ': ' + show(step(id), d) : '').filter(Boolean).join('<br>');
+
+async function start() {
+  if (!PEOPLE.length) { document.querySelector('main').innerHTML = '<p>Nobody here is called “' + UI.esc(ONLY) + '”. Use a work ID, such as SM-104, or Ravi Kumar.</p>'; return; }
+  if (UI.apart) document.querySelectorAll('.nav').forEach(a => a.hidden = true);
+  for (const p of PEOPLE) await UI.signIn(p);
+  W = (await UI.api('GET', '/owner/api/workflow')).workflow;
+  KEYS = (await UI.api('GET', '/orgs/api/keys')).keys;
+  const c = await MG.flow.check(W, KEYS['Motor Department']);
+  $('wf').innerHTML = c.ok ? '<span class="ok">The workflow checks: published and signed by the Motor Department</span> (id ' + UI.esc(W.id) + ').' : '<span class="bad">The workflow fails: ' + UI.esc(c.why) + '</span>';
+  // A stranger's pass: it claims to be Northbank's loan officer, but it is signed with the stranger's own key.
+  fake = { key: 'fake', person: 'Kavya Iyer', org: 'Northbank', pass: await MG.pass.issue({ name: 'Northbank', secret: (await MG.stamp.newKey()).secret }, { person: 'Kavya Iyer', role: 'Loan officer', workId: 'NB-311' }) };
+  await render();
+}
+
+async function render() {
+  for (const p of PEOPLE) boxes[p.key] = await UI.api('POST', '/owner/api/inbox', { pass: p.pass });
+  if (!caseId) caseId = PEOPLE.flatMap(p => [...boxes[p.key].waiting, ...boxes[p.key].updates]).map(x => x.case).sort().pop() || null;
+  const waitingFor = PEOPLE.filter(p => boxes[p.key].waiting.length);
+  // The page opens on whoever acts next: Meera, who opens the case, or the first person with a step waiting.
+  if (!me) me = ((caseId ? waitingFor[0] : who('meera')) || PEOPLE[0]).key;
+  // After an approval, move on to the next person with a step waiting.
+  if (moveOn) { moveOn = false; if (!boxes[me].waiting.length && waitingFor.length) { me = waitingFor[0].key; lastResult += '<br>Next: ' + UI.esc(waitingFor[0].person) + '’s turn.'; } }
+  $('next').innerHTML = !caseId ? '<b>Start:</b> Meera Shah, the showroom’s sales manager, opens a case.' : waitingFor.length
+    ? '<b>Waiting for:</b> ' + waitingFor.map(p => '<a href="#" data-go="' + p.key + '">' + UI.esc(p.person) + '</a> (' + boxes[p.key].waiting.map(x => UI.esc(step(x.step).does.toLowerCase())).join('; ') + ')').join(', ')
+    : '<b class="ok">Every step is done.</b> The registration certificate, with the bank’s claim noted, is in Ravi’s agent.';
+  $('people').innerHTML = PEOPLE.map(p => '<button data-go="' + p.key + '" class="' + (me === p.key ? 'on' : '') + '">' + (boxes[p.key].waiting.length ? '<span class="count">' + boxes[p.key].waiting.length + '</span>' : '') + UI.esc(p.person) + '<small>' + UI.esc(p.label) + '</small></button>').join('')
+    + '<button data-go="fake" class="fake ' + (me === 'fake' ? 'on' : '') + '">A stranger<small>claims to be Northbank’s loan officer</small></button>'
+    + '<div class="own">One person’s own screen, as on their own phone or desk:<br>' + EVERYONE.map(p => '<a href="' + UI.esc(UI.linkFor(p.workId || p.person)) + '" target="_blank">' + UI.esc(p.person.split(' ')[0]) + '</a>').join('') + '</div>';
+  await renderScreen();
+  await renderFile();
+}
+
+async function renderScreen() {
+  if (me === 'fake') {
+    $('screen').innerHTML = '<div class="screenTop"><b>A stranger</b><span>with a pass that only claims to be Northbank’s</span></div>'
+      + '<p>The stranger copied Northbank’s name, Kavya’s name and her work ID. What they cannot copy is Northbank’s signature on a pass, or Kavya’s fingerprint.</p>'
+      + (caseId ? '<button class="go" id="tryFake">Try to sanction a ₹9,00,000 loan on ' + UI.esc(caseId) + '</button>' : '<p>Open a case first (Meera Shah).</p>') + '<p class="result" id="res">' + lastResult + '</p>';
+    if ($('tryFake')) $('tryFake').onclick = async () => {
+      const r = await UI.api('POST', '/owner/api/approve', { pass: fake.pass, items: [{ case: caseId, step: 'loan', details: { loan: 900000, years: '5' } }], swipes: {} });
+      lastResult = r.results.map(x => '<span class="bad">Refused: ' + UI.esc(x.why) + '</span>').join('<br>') + '<br>Every party of the case now sees an alert.';
+      await render();
+    };
+    return;
+  }
+  const p = who(me), box = boxes[me];
+  const small = box.waiting.filter(x => !x.important), imp = box.waiting.filter(x => x.important);
+  const fields = (x, i) => x.adds ? '<div class="fields">' + Object.keys(x.adds).map(k => '<span>' + UI.esc(LABEL[k] || k) + '</span><input type="text" data-f="' + i + '" data-k="' + k + '" value="' + UI.esc((SAMPLE[x.step] || {})[k] || '') + '">').join('') + '</div>' : '';
+  const basis = x => { const b = basisWords(x.basis); return b ? '<div class="basis">You see and sign over: ' + b + '</div>' : ''; };
+  let h = '<div class="screenTop"><b>' + UI.esc(p.person) + (p.workId ? ' · ' + UI.esc(p.label) : '') + '</b><span>' + (p.workId ? 'signed in with work ID ' + UI.esc(p.workId) : 'his personal agent') + ' · ' + await UI.deviceButton(p) + '</span></div>';
+  h += '<p class="result" id="res">' + lastResult + '</p>';
+  if (me === 'meera') h += '<div class="row"><b>Open a new case</b><div class="meta">Buyer Ravi Kumar · insurer Lotus Insurance · bank Northbank</div><div class="swipe"><button class="small" id="open">Open the case</button></div></div>';
+  h += '<h3>Needs your approval</h3>';
+  if (!box.waiting.length) h += '<p class="meta" style="color:var(--soft)">Nothing waits for you.</p>';
+  if (small.length) {
+    h += small.map((x, i) => '<div class="row"><label class="pick"><input type="checkbox" checked data-pick="' + i + '"><span><b>' + UI.esc(x.does) + '</b> <span class="meta">' + UI.esc(x.case) + ' · ' + UI.esc(x.kind) + '</span></span></label>' + basis(x) + fields(x, 's' + i) + '</div>').join('');
+    h += UI.swipeArea(p, small.length > 1 ? 'Swipe once to approve the ticked items' : 'Swipe to approve', 'swipeList');
+  }
+  h += imp.map((x, i) => '<div class="row imp"><span class="tag">Important: a screen of its own</span><div><b>' + UI.esc(x.does) + '</b> <span class="meta">' + UI.esc(x.case) + '</span></div>' + basis(x) + fields(x, 'i' + i) + UI.swipeArea(p, 'Swipe to approve this, on its own', 'swipeImp' + i) + '</div>').join('');
+  if (box.alerts.length) h += '<h3>Alerts</h3>' + box.alerts.slice(-4).reverse().map(a => '<div class="row warn"><b>Refused:</b> ' + UI.esc(a.claimed) + (a.step ? ' tried “' + UI.esc((step(a.step) || {}).does || a.step) + '”' : '') + '<div class="meta">' + UI.esc(a.why) + '</div></div>').join('');
+  if (box.updates.length) h += '<h3>Updates</h3>' + box.updates.slice(0, 6).map(u => '<div class="row"><b>' + UI.esc(u.does) + '</b><div class="meta">' + UI.esc(u.by) + ' · ' + UI.time(u.at) + (Object.keys(u.details).length ? ' · ' + show(step(u.step), u.details) : '') + '</div></div>').join('');
+  $('screen').innerHTML = h;
+  const read = (x, f) => { const typed = {}; document.querySelectorAll('[data-f="' + f + '"]').forEach(i => typed[i.dataset.k] = i.value); return x.adds ? MG.flow.clean(step(x.step), typed) : {}; };
+  const send = async (list, id) => {
+    if (!UI.ticked(p, id)) return;
+    const items = [];
+    for (const [x, f] of list) { const d = read(x, f); if (!d) return alert('Fill in every field for “' + x.does + '”.'); items.push({ case: x.case, step: x.step, details: d, basis: x.basis }); }
+    const purposes = await Promise.all(items.map(i => MG.flow.purpose(i.case, i.step, i.details, i.basis)));
+    let swipes; try { swipes = await UI.swipe(p, purposes); } catch (e) { return alert('The fingerprint was not given: ' + e.message); }
+    const r = await UI.api('POST', '/owner/api/approve', { pass: p.pass, items: items.map(({ basis, ...i }) => i), swipes });
+    lastResult = r.results ? r.results.map(x => x.ok ? '<span class="ok">Approved: ' + UI.esc(step(x.step).does) + ' (receipt ' + x.receipt + ')</span>' : '<span class="bad">Refused: ' + UI.esc(x.why) + '</span>').join('<br>') : '<span class="bad">' + UI.esc(r.why) + '</span>';
+    moveOn = true; await render();
+  };
+  if ($('swipeList')) $('swipeList').onclick = () => send(small.map((x, i) => [x, 's' + i]).filter((_, i) => document.querySelector('[data-pick="' + i + '"]').checked), 'swipeList');
+  imp.forEach((x, i) => $('swipeImp' + i).onclick = () => send([[x, 'i' + i]], 'swipeImp' + i));
+  if ($('open')) $('open').onclick = async () => {
+    const r = await UI.api('POST', '/owner/api/start', { pass: p.pass, parties: { buyer: 'Ravi Kumar', insurer: 'Lotus Insurance', bank: 'Northbank' } });
+    if (r.ok) caseId = r.case; lastResult = r.ok ? '<span class="ok">Case ' + UI.esc(r.case) + ' opened. Now approve the order and its price.</span>' : '<span class="bad">' + UI.esc(r.why) + '</span>';
+    await render();
+  };
+  const link = document.querySelector('[data-link]');
+  if (link) link.onclick = async () => { try { await UI.linkDevice(p); lastResult = '<span class="ok">' + UI.esc(p.workId ? p.org : 'The agent provider') + ' signed a new pass that names this device’s passkey. From now on only this fingerprint approves for ' + UI.esc(p.person) + '.</span>'; } catch (e) { lastResult = '<span class="bad">No passkey was made: ' + UI.esc(e.message) + '</span>'; } await render(); };
+}
+
+async function renderFile() {
+  const viewer = who(me === 'fake' ? 'ravi' : me);
+  file = caseId ? await UI.api('POST', '/owner/api/file', { pass: viewer.pass, case: caseId }) : null;
+  if (!file || !file.ok) { $('file').innerHTML = '<p style="color:var(--soft)">' + (caseId ? UI.esc(file.why) : 'No case yet.') + '</p>'; }
+  else {
+    const c = file.case;
+    $('file').innerHTML = '<p><b>' + UI.esc(c.id) + '</b> · seen by ' + UI.esc(viewer.person) + '<br><span style="color:var(--soft);font-size:13px">' + Object.entries(c.parties).map(([k, v]) => UI.esc(W.parties[k].title) + ': ' + UI.esc(v)).join(' · ') + '</span></p><ul class="steps">'
+      + c.steps.map(s => '<li class="' + s.state + '"><b>' + UI.esc(s.does) + '</b> <span class="who">' + UI.esc(s.role ? s.role + ', ' + c.parties[s.party] : W.parties[s.party].title) + ' · ' + (s.state === 'done' ? 'done' : s.state === 'waiting' ? 'waiting' : 'later') + '</span>'
+        + s.approvals.map(a => '<div class="who">' + UI.esc(a.by) + (a.role ? ', ' + UI.esc(a.role) : '') + ' · ' + UI.time(a.at) + ' · ' + UI.esc(MG.flow.howWords(a.how)) + ' · receipt ' + a.receipt + (Object.keys(a.details).length ? '<br>' + show(step(a.step), a.details) : '') + '</div>').join('') + '</li>').join('')
+      + '</ul><div class="swipe"><button class="small" id="recheck">Check every approval again</button><span id="recheckResult" class="result"></span></div>';
+    $('recheck').onclick = recheck;
+  }
+  const rec = await UI.api('GET', '/owner/api/receipts');
+  $('receipts').innerHTML = rec.receipts.slice().reverse().map(r => '<div>' + r.n + ' · ' + UI.esc(r.what) + ' · ' + r.mark.slice(0, 16) + '… ← ' + r.prev.slice(0, 10) + '</div>').join('') || 'None yet.';
+  $('checkLog').onclick = async () => {
+    const v = await MG.log.verify(rec.receipts);
+    let mine = 0; if (file && file.ok) for (const e of file.entries) if (await MG.log.matches(e, rec.receipts[e.n - 1])) mine++;
+    $('logResult').innerHTML = v.ok ? '<span class="ok">The chain of ' + v.count + ' receipts holds.' + (file && file.ok ? ' All ' + mine + ' of ' + file.entries.length + ' entries in my copy match their receipts.' : '') + '</span>' : '<span class="bad">' + UI.esc(v.why) + '</span>';
+  };
+}
+
+// CHECK AGAIN, here in the browser, without asking the server: each pass is signed by its organisation, and each
+// fingerprint was made by the device the pass names, over exactly these details.
+async function recheck() {
+  const c = file.case, kase = { steps: Object.fromEntries(c.steps.map(s => [s.id, s.approvals])) }, out = [];
+  for (const s of c.steps) for (const a of s.approvals) {
+    const p = await MG.pass.check(a.pass, KEYS, Date.parse(a.at));
+    if (!p.ok) { out.push('<span class="bad">' + UI.esc(s.does) + ': ' + UI.esc(p.why) + '</span>'); continue; }
+    if (a.how !== 'device') { out.push(UI.esc(s.does) + ': pass signed by ' + UI.esc(a.pass.by) + '; a sample tick, no fingerprint to check'); continue; }
+    const purpose = await MG.flow.purpose(c.id, s.id, a.details, MG.flow.basis(W, kase, s.id));
+    const f = await MG.swipe.check({ how: 'device', ...a.swipe }, await MG.pass.holder(a.pass), purpose, Date.parse(a.swipe.at));
+    out.push(f.ok && a.swipe.key === a.pass.passkey ? '<span class="ok">' + UI.esc(s.does) + ': pass signed by ' + UI.esc(a.pass.by) + ', fingerprint from the device it names, over these exact details</span>' : '<span class="bad">' + UI.esc(s.does) + ': ' + UI.esc(f.why || 'the device is not the one the pass names') + '</span>');
+  }
+  $('recheckResult').innerHTML = out.join('<br>') || 'Nothing approved yet.';
+}
+
+document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); me = g.dataset.go; lastResult = ''; render(); } });
+$('again').onclick = async () => { await UI.api('POST', '/owner/api/start-again'); caseId = null; lastResult = ''; me = 'meera'; await start(); };
+start();
+</script>
+</body>
+</html>

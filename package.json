@@ -1,0 +1,16 @@
+{
+  "name": "verification-is-all-you-need",
+  "version": "0.1.0",
+  "description": "Sample code for the paper Verification Is All You Need: multi-party workflows where authorised people are the humans in the loop who verify and approve their own parts.",
+  "author": "Tony Mathew",
+  "license": "Apache-2.0",
+  "repository": "github:tonymcodes/Verification-Is-All-You-Need",
+  "private": true,
+  "scripts": {
+    "start": "node server/server.js",
+    "test": "node test/test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

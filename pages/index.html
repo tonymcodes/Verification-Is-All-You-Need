@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verified Workflows</title>
+<link rel="stylesheet" href="/pages/style.css">
+<style>
+.wrap{max-width:860px;margin:0 auto;padding:24px 16px 60px}
+.wrap h1{font-size:28px;margin:0 0 6px}
+.wrap .sub{color:var(--soft);margin:0 0 20px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+@media (max-width:700px){.two{grid-template-columns:1fr}}
+.two .card h2{font-size:17px;letter-spacing:0;text-transform:none;color:var(--ink);margin:4px 0 6px}
+.two .card p{margin:0 0 10px}
+.two .card .chip{margin-bottom:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Verified workflows: sample code</h1>
+<p class="sub">From the paper <i>Verification Is All You Need</i> (Part 2 of the Agent Middleground Protocol papers). Today’s processes, reimagined as workflows shared across people and organisations, where the authorised people are the humans in the loop who verify and approve their own parts.</p>
+<div class="two">
+<div class="card"><span class="chip ok">the main way</span><h2>Buying a car with insurance and a loan</h2>
+<p>The motor department runs the workflow <b>on its own server</b>. The showroom, the insurer, the bank and the buyer each approve their own part, in their roles, with their own swipe. <b>The data is shown:</b> every party of the case sees the whole case file.</p>
+<p>Try a stranger with a copied name, and see it refused and recorded.</p>
+<a class="go" href="/pages/car.html" style="display:inline-block;text-decoration:none;padding:8px 16px;border-radius:999px;background:var(--ink);color:var(--bg);font-weight:600">Try the car purchase</a></div>
+<div class="card"><span class="chip">another possibility</span><h2>A sealed tender to build a bridge</h2>
+<p>The tender runs <b>in an Agent Middleground</b>. Companies submit sealed bids, the published rules score them, and two of three officers approve the result. <b>The data stays hidden:</b> each company takes back only its own score.</p>
+<a class="go" href="/pages/tender.html" style="display:inline-block;text-decoration:none;padding:8px 16px;border-radius:999px;background:var(--ink);color:var(--bg);font-weight:600">Try the sealed tender</a></div>
+</div>
+<p style="color:var(--soft);font-size:13.5px">Everything runs on this computer, and every name is made up. A ticked box stands in for the fingerprint unless you link this device’s fingerprint (a passkey) to a person. Then only that fingerprint approves for them.</p>
+</div>
+</body>
+</html>

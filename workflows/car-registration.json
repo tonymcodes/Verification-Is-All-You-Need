@@ -1,0 +1,28 @@
+{
+  "name": "car-registration",
+  "title": "Buying a car with insurance and a loan, and registering it",
+  "runs": "on the owner's server: the motor department's. Every party of a case sees the case file.",
+  "caseLabel": "CAR",
+  "parties": {
+    "buyer": { "is": "person", "title": "The buyer" },
+    "showroom": { "is": "organisation", "title": "The showroom" },
+    "insurer": { "is": "organisation", "title": "The insurer" },
+    "bank": { "is": "organisation", "title": "The bank" },
+    "motor": { "is": "organisation", "title": "The motor department", "name": "Motor Department", "owns": true }
+  },
+  "steps": [
+    { "id": "price", "party": "showroom", "role": "Sales manager", "kind": "approve", "does": "Approves the order and its price", "starts": true,
+      "adds": { "car": "text", "price": "amount" } },
+    { "id": "order", "party": "buyer", "kind": "approve", "does": "Confirms the order", "after": ["price"], "important": true },
+    { "id": "share", "party": "buyer", "kind": "consent", "does": "Shares their name, address and the car's details with the insurer and the bank", "after": ["price"] },
+    { "id": "policy", "party": "insurer", "role": "Underwriter", "kind": "approve", "does": "Issues the insurance policy", "after": ["share"],
+      "adds": { "policy": "text", "premium": "amount" } },
+    { "id": "loan", "party": "bank", "role": "Loan officer", "kind": "approve", "does": "Sanctions the loan", "after": ["share"],
+      "adds": { "loan": "amount", "years": "text" } },
+    { "id": "accept", "party": "buyer", "kind": "approve", "does": "Accepts the loan, and the bank's claim on the car until it is repaid", "after": ["loan"], "important": true },
+    { "id": "pay", "party": "bank", "role": "Loan officer", "kind": "attest", "does": "Confirms the bank has paid the showroom", "after": ["order", "accept"] },
+    { "id": "register", "party": "motor", "role": "Registration officer", "kind": "approve", "does": "Registers the car, with the bank's claim noted", "after": ["pay", "policy"],
+      "adds": { "number": "text" } }
+  ],
+  "records": "Every approval and refusal goes into the motor department's log. Public receipts show only fingerprints."
+}

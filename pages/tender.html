@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A Sealed Tender</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top"><b>A sealed tender to build a bridge</b><span>a workflow in an Agent Middleground · the data stays hidden</span>
+<span class="right everyone"><a href="/" class="nav">All samples</a><a href="car.html" class="nav">The car purchase</a><button class="small" id="again">Start again</button></span></header>
+<main>
+<div class="intro">
+<p><b>Another possibility: a workflow in a middle ground.</b> The City Works Office invites bids. Each company’s authorised signatory submits a sealed bid with their own swipe. At the deadline the published rules check eligibility and score the bids. The evaluation committee sees only the scores, and two of its three officers approve the result. Each company takes back a confirmation token with its own score; nobody else’s price or accounts ever leave.</p>
+<p><span class="everyone">Pick a person on the left, or open one person’s own screen with the links under the list. </span><span id="wf"></span></p>
+<p id="next"></p>
+</div>
+<section class="people card"><h2>Bidding companies</h2><div id="bidders"></div><h2 style="margin-top:14px">Evaluation committee</h2><div id="committee"></div></section>
+<section class="card" id="screen"></section>
+<section class="card"><h2>What the middle ground holds</h2><div id="holds"></div>
+<h2 style="margin-top:18px">The public result</h2><div id="public"></div>
+<h2 style="margin-top:18px">Public receipts</h2><div class="receipts" id="receipts"></div></section>
+</main>
+<script>window.MG = {};</script>
+<script src="/core/stamp.js"></script>
+<script src="/core/swipe.js"></script>
+<script src="/core/workflow.js"></script>
+<script src="ui.js"></script>
+<script>
+const BIDDERS = [
+  { key: 'hb', person: 'Sam Okafor', workId: 'HB-9', org: 'Harbour Build', bid: { price: '48.5', turnover: '213.7', licence: 'Class A', projects: '4' } },
+  { key: 'rc', person: 'Nisha Pillai', workId: 'RC-4', org: 'Ridge Constructions', bid: { price: '45.2', turnover: '164.3', licence: 'Class A', projects: '2' } },
+  { key: 'dw', person: 'Omar Siddiqui', workId: 'DW-2', org: 'Delta Works', bid: { price: '41.7', turnover: '87.9', licence: 'Class A', projects: '3' } },
+];
+const COMMITTEE = [
+  { key: 'c1', person: 'Farah Khan', workId: 'CW-01', org: 'City Works Office' },
+  { key: 'c2', person: 'Joseph Mathai', workId: 'CW-02', org: 'City Works Office' },
+  { key: 'c3', person: 'Lin Wei', workId: 'CW-03', org: 'City Works Office' },
+];
+const LABEL = { price: 'Price (₹ crore)', turnover: 'Yearly turnover (₹ crore)', licence: 'Licence', projects: 'Similar projects done' };
+// ?me=<work ID>: one person's own screen, as on their own desk.
+const EVERYONE = [...BIDDERS, ...COMMITTEE], ONLY = UI.q.get('me'), ALL = ONLY ? EVERYONE.filter(p => p.workId === ONLY) : EVERYONE;
+if (ONLY) document.body.classList.add('one');
+let moveOn = false, W, ST, me = (ALL[0] || BIDDERS[0]).key, lastResult = '', tokens = {}, view = null;
+const $ = id => document.getElementById(id), who = k => ALL.find(p => p.key === k);
+
+async function start() {
+  if (!ALL.length) { document.querySelector('main').innerHTML = '<p>No work ID “' + UI.esc(ONLY) + '” here. Use one such as HB-9 or CW-01.</p>'; return; }
+  if (UI.apart) document.querySelectorAll('.nav').forEach(a => a.hidden = true);
+  for (const p of ALL) await UI.signIn(p);
+  W = (await UI.api('GET', '/middle/api/workflow')).workflow;
+  const keys = (await UI.api('GET', '/orgs/api/keys')).keys, c = await MG.flow.check(W, keys['City Works Office']);
+  $('wf').innerHTML = c.ok ? '<span class="ok">The tender’s rules check: published and signed by the City Works Office.</span>' : '<span class="bad">' + UI.esc(c.why) + '</span>';
+  await render();
+}
+
+async function render() {
+  ST = await UI.api('GET', '/middle/api/status');
+  tokens = {};
+  for (const b of BIDDERS.filter(x => x.pass)) { const t = await UI.api('POST', '/middle/api/token', { pass: b.pass }); b.state = t.ok ? 'token' : /not bid/.test(t.why) ? 'none' : 'sealed'; if (t.ok) tokens[b.key] = t.token; }
+  const viewer = COMMITTEE.find(c => c.pass);   // on one bidder's own screen, nobody from the committee is signed in
+  view = ST.state !== 'open' && viewer ? await UI.api('POST', '/middle/api/view', { pass: viewer.pass }) : null;
+  const left = BIDDERS.filter(b => b.pass && b.state === 'none');
+  const link = p => '<a href="#" data-go="' + p.key + '">' + UI.esc(p.person) + '</a>';
+  const toApprove = view ? COMMITTEE.filter(c => c.pass && !view.approvedBy.some(b => b.startsWith(c.person + ','))) : [];
+  // After a bid, closing or an approval, move on to the next person with something to do.
+  if (moveOn) {
+    moveOn = false;
+    const n = ONLY ? null : ST.state === 'open' ? (left[0] || COMMITTEE[0]) : ST.state === 'closed' ? (who(me).bid ? toApprove[0] : toApprove.find(c => c.key === me) || toApprove[0]) : BIDDERS[0];
+    if (n && n.key !== me) { me = n.key; lastResult += '<br>Next: ' + UI.esc(n.person) + (ST.state === 'decided' ? ', to see Harbour Build’s token.' : '’s turn.'); }
+  }
+  $('next').innerHTML = ST.state === 'open' ? (left.length ? '<b>Waiting for bids from:</b> ' + left.map(b => '<a href="#" data-go="' + b.key + '">' + UI.esc(b.org) + '</a>').join(', ') + (ST.sealedBids >= 2 && !ONLY ? '. Or a committee member, such as ' + link(COMMITTEE[0]) + ', can close the tender now.' : '') : ONLY ? '<b>' + ST.sealedBids + ' sealed bids so far.</b> The tender closes at the deadline.' : '<b>All bids are in.</b> A committee member, such as ' + link(COMMITTEE[0]) + ', closes the tender: the deadline passes.')
+    : ST.state === 'closed' ? '<b>Waiting for the committee:</b> ' + (view ? view.approvedBy.length + ' of ' + view.needs + ' approvals.' + (toApprove.length ? ' Not yet approved: ' + toApprove.map(link).join(', ') + '.' : '') : 'two of three must approve.') : '<b class="ok">The result is out.</b> Each company can see its own token.';
+  const btn = p => '<button data-go="' + p.key + '" class="' + (me === p.key ? 'on' : '') + '">' + UI.esc(p.person) + '<small>' + UI.esc(p.org === 'City Works Office' ? 'Evaluation committee member' : 'Authorised signatory, ' + p.org) + '</small></button>';
+  $('bidders').innerHTML = BIDDERS.map(btn).join('');
+  $('committee').innerHTML = COMMITTEE.map(btn).join('') + '<div class="own">One person’s own screen:<br>' + EVERYONE.map(p => '<a href="' + UI.esc(UI.linkFor(p.workId)) + '" target="_blank">' + UI.esc(p.person.split(' ')[0]) + '</a>').join('') + '</div>';
+  $('holds').innerHTML = '<div class="row"><b>' + ST.holds.bids + ' sealed bid' + (ST.holds.bids === 1 ? '' : 's') + '</b><div class="meta">readable ' + UI.esc(ST.holds.readable) + '</div></div>' + (ST.holds.wiped ? '<div class="row"><b>The bids are wiped.</b><div class="meta">Only the result and each company’s own token remain.</div></div>' : '');
+  $('public').innerHTML = ST.result ? '<div class="row"><b>' + UI.esc(ST.result.winner) + '</b> wins at ₹' + UI.esc(ST.result.price) + ' crore<div class="meta">approved by ' + ST.result.approvedBy.map(UI.esc).join('; ') + '</div></div>' : '<p style="color:var(--soft)">Not out yet. Anyone sees only how many sealed bids there are.</p>';
+  $('receipts').innerHTML = ST.receipts.slice().reverse().map(r => '<div>' + r.n + ' · ' + UI.esc(r.what) + ' · ' + r.mark.slice(0, 16) + '…</div>').join('') || 'None yet.';
+  await renderScreen();
+}
+
+async function renderScreen() {
+  const p = who(me), isBidder = !!p.bid;
+  let h = '<div class="screenTop"><b>' + UI.esc(p.person) + ' · ' + UI.esc(isBidder ? 'Authorised signatory, ' + p.org : 'Evaluation committee member, City Works Office') + '</b><span>signed in with work ID ' + UI.esc(p.workId) + ' · ' + await UI.deviceButton(p) + '</span></div><p class="result">' + lastResult + '</p>';
+  if (isBidder) {
+    if (p.state === 'none' && ST.state === 'open') {
+      h += '<div class="row imp"><span class="tag">Important: a screen of its own</span><div><b>Submit ' + UI.esc(p.org) + '’s sealed bid</b></div><div class="fields">'
+        + Object.keys(p.bid).map(k => '<span>' + UI.esc(LABEL[k]) + '</span><input type="text" data-k="' + k + '" value="' + UI.esc(p.bid[k]) + '">').join('') + '</div>'
+        + '<div class="basis">In real use the turnover, licence and projects come as certificate tokens from their issuers (Part 1). Rules: ' + UI.esc(ST.rules.score) + '. Eligible: turnover at least ₹' + ST.rules.eligible.turnoverAtLeast + ' crore, ' + UI.esc(ST.rules.eligible.licence) + ', at least ' + ST.rules.eligible.projectsAtLeast + ' similar projects.</div>'
+        + UI.swipeArea(p, 'Swipe to submit the sealed bid', 'bid') + '</div>';
+    } else if (p.state === 'none') h += '<p>The tender is closed. ' + UI.esc(p.org) + ' did not bid.</p>';
+    else if (p.state === 'sealed') h += '<div class="row"><b>' + UI.esc(p.org) + '’s bid is sealed in the middle ground.</b><div class="meta">Nobody can read it, not even the City Works Office. Only the published rules read it, at the deadline.</div></div>';
+    else {
+      const t = tokens[p.key];
+      h += '<h3>Your confirmation token</h3><div class="token"><dl><dt>For</dt><dd>' + UI.esc(t.for) + '</dd><dt>Your score</dt><dd><b>' + t.yourScore + '</b>' + (t.eligible ? ' · rank ' + t.yourRank + ' of ' + t.of : ' · not eligible: ' + t.reasons.map(UI.esc).join('; ')) + '</dd><dt>Winner</dt><dd>' + UI.esc(t.winner) + ', at ₹' + UI.esc(t.winningPrice) + ' crore</dd><dt>Approved by</dt><dd>' + t.approvedBy.map(UI.esc).join('<br>') + '</dd><dt>Signed by</dt><dd>' + UI.esc(t.by) + '</dd></dl></div>'
+        + '<p style="color:var(--soft);font-size:13px">Nothing in it shows another company’s price or accounts.</p><div class="swipe"><button class="small" id="checkToken">Check the middle ground’s signature</button><span id="tokenResult" class="result"></span></div>';
+    }
+  } else {
+    if (ST.state === 'open') h += '<p>' + ST.sealedBids + ' sealed bids. The committee cannot read them.</p><div class="swipe"><button class="go" id="close">The deadline passes: close the tender</button></div>';
+    else {
+      const v = await UI.api('POST', '/middle/api/view', { pass: p.pass });
+      h += '<h3>The scores, worked out by the published rules</h3><table class="t"><tr><th>Company</th><th>Eligible</th><th>Score</th><th>Rank</th></tr>' + v.scores.map(s => '<tr><td>' + UI.esc(s.company) + '</td><td>' + (s.eligible ? 'yes' : 'no: ' + s.reasons.map(UI.esc).join('; ')) + '</td><td>' + s.score + '</td><td>' + (s.rank || '–') + '</td></tr>').join('') + '</table>'
+        + '<p style="color:var(--soft);font-size:13px">The committee sees no prices, no turnover and no project counts.</p>';
+      if (v.state === 'closed' && !v.approvedBy.some(b => b.startsWith(p.person + ','))) h += '<div class="row imp"><span class="tag">Important: a screen of its own</span><div><b>Approve the result: ' + UI.esc(v.winner) + ' wins</b> <span class="meta">' + v.approvedBy.length + ' of ' + v.needs + ' approvals so far</span></div>' + UI.swipeArea(p, 'Swipe to approve the result', 'approve') + '</div>';
+      else h += '<p>' + (v.state === 'decided' ? 'The result is approved and announced.' : 'You have approved. ' + v.approvedBy.length + ' of ' + v.needs + '.') + '</p>';
+    }
+  }
+  $('screen').innerHTML = h;
+  const say = r => { moveOn = !!r.ok; lastResult = r.ok ? '<span class="ok">' + (r.say || 'Done.') + '</span>' : '<span class="bad">Refused: ' + UI.esc(r.why) + '</span>'; };
+  if ($('bid')) $('bid').onclick = async () => {
+    if (!UI.ticked(p, 'bid')) return;
+    const typed = {}; document.querySelectorAll('[data-k]').forEach(i => typed[i.dataset.k] = i.value);
+    const d = MG.flow.clean(MG.flow.step(W, 'bid'), typed); if (!d) return alert('Fill in every field.');
+    const purpose = await MG.flow.purpose('TENDER-1', 'bid', d, {});
+    let swipes; try { swipes = await UI.swipe(p, [purpose]); } catch (e) { return alert('The fingerprint was not given: ' + e.message); }
+    const r = await UI.api('POST', '/middle/api/bid', { pass: p.pass, details: d, swipes });
+    say({ ...r, say: 'Bid sealed. The middle ground signed a receipt: “' + (r.token && r.token.says) + '”' }); await render();
+  };
+  if ($('close')) $('close').onclick = async () => { const r = await UI.api('POST', '/middle/api/close', { pass: p.pass }); say({ ...r, say: 'Closed. The rules scored the bids.' }); await render(); };
+  if ($('approve')) $('approve').onclick = async () => {
+    if (!UI.ticked(p, 'approve')) return;
+    const v = await UI.api('POST', '/middle/api/view', { pass: p.pass }), purpose = await MG.flow.purpose('TENDER-1', 'result', { winner: v.winner }, { scores: v.scores });
+    let swipes; try { swipes = await UI.swipe(p, [purpose]); } catch (e) { return alert('The fingerprint was not given: ' + e.message); }
+    const r = await UI.api('POST', '/middle/api/approve', { pass: p.pass, swipes });
+    say({ ...r, say: r.decided ? 'Approved. Two of three: the result is out, each company has its token, and the bids are wiped.' : 'Approved. One more committee member is needed.' }); await render();
+  };
+  if ($('checkToken')) $('checkToken').onclick = async () => {
+    const t = tokens[p.key], { stamp, ...rest } = t, good = await MG.stamp.check(ST.key, MG.wordsOf(rest), stamp);
+    $('tokenResult').innerHTML = good ? '<span class="ok">Signed by the middle ground, unchanged.</span>' : '<span class="bad">The signature does not match.</span>';
+  };
+  const link = document.querySelector('[data-link]');
+  if (link) link.onclick = async () => { try { await UI.linkDevice(p); lastResult = '<span class="ok">' + UI.esc(p.org) + ' signed a new role pass that names this device’s passkey.</span>'; } catch (e) { lastResult = '<span class="bad">No passkey was made: ' + UI.esc(e.message) + '</span>'; } await render(); };
+}
+
+document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); me = g.dataset.go; lastResult = ''; render(); } });
+$('again').onclick = async () => { await UI.api('POST', '/middle/api/start-again'); lastResult = ''; me = 'hb'; await start(); };
+start();
+</script>
+</body>
+</html>

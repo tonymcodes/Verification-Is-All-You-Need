@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verification Is All You Need</title>
+<style>
+:root{--ink:#1d1d1f;--soft:#55555a;--rule:#d9d6cf;--bg:#fdfcf9;--plan:#f2efe8;--accent:#9a4f12;--blue:#2c5a85;--green:#24685a}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.65 Charter,"Bitstream Charter","Sitka Text",Cambria,Georgia,serif;-webkit-text-size-adjust:100%}
+header.top{font:14px/1 system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;gap:18px;padding:12px 24px;border-bottom:1px solid var(--rule);background:#fff}
+header.top a{color:var(--soft);text-decoration:none}header.top a.on{color:var(--ink);font-weight:600}header.top .right{margin-left:auto;display:flex;gap:18px}
+.layout{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:240px minmax(0,700px);gap:56px;padding:40px 24px 80px}
+nav.toc{position:sticky;top:24px;align-self:start;font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;max-height:calc(100vh - 48px);overflow:auto}
+nav.toc b{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);margin:0 0 8px}
+nav.toc ol{list-style:none;margin:0;padding:0}nav.toc li{margin:3px 0}nav.toc li.sub{padding-left:14px;font-size:13px}
+nav.toc a{color:var(--soft);text-decoration:none}nav.toc a:hover{color:var(--ink)}
+article{min-width:0}
+h1{font-size:40px;line-height:1.15;margin:0 0 10px;font-weight:600;letter-spacing:-.01em}
+.subtitle{font-size:22px;font-style:italic;color:var(--soft);margin:0 0 18px;line-height:1.35}
+.byline{font:15px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--soft);margin:0 0 36px;padding-bottom:22px;border-bottom:1px solid var(--rule)}
+h2{font-size:26px;line-height:1.25;margin:56px 0 6px;font-weight:600}
+h3{font-size:20px;margin:34px 0 4px;font-weight:600}
+.abstract{margin:0 0 8px}
+.abstract h2{font:600 13px/1 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:.1em;text-transform:uppercase;margin:0 0 10px;color:var(--soft)}
+.lead{font-style:italic;color:#3a3a3e;margin:0 0 18px}
+p{margin:0 0 16px}
+a{color:var(--blue)}
+figure{margin:26px 0 30px}
+figure svg{width:100%;height:auto;display:block}
+figcaption{font:14.5px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--soft);margin-top:10px}
+figcaption b{color:var(--ink)}
+figure img{width:100%;height:auto;display:block;border:1px solid var(--rule);border-radius:8px;background:#fff}
+figure .pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+figure .narrow{max-width:420px;margin:0 auto}
+pre.cmd{font:13.5px/1.55 ui-monospace,Consolas,monospace;background:#f2efe8;border-radius:6px;padding:10px 14px;overflow:auto}
+@media (max-width:640px){figure .pair{grid-template-columns:1fr}}
+.plan{background:var(--plan);border-left:3px solid var(--accent);padding:12px 18px 6px;margin:0 0 20px;font:15.5px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+.plan .tag{display:block;font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:4px}
+.plan ul,.plan ol{margin:4px 0 10px;padding-left:20px}.plan li{margin:3px 0}
+.fig-plan{border:1.5px dashed #b9b3a6;border-radius:6px;padding:14px 18px;margin:0 0 20px;font:14.5px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--soft)}
+@media (max-width:980px){.layout{grid-template-columns:1fr;gap:0;padding:24px 16px 60px}nav.toc{position:static;max-height:none;margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid var(--rule)}h1{font-size:32px}.subtitle{font-size:19px}body{font-size:17px}}
+@media print{header.top,nav.toc{display:none}.layout{display:block;padding:0}body{background:#fff;font-size:11.5pt}h2{break-after:avoid}figure{break-inside:avoid}}
+.glance{margin:8px 0 0}
+.glance h2{margin:34px 0 12px}
+.glance p{font-size:17px}
+.glance .intro{font-style:italic;color:#3a3a3e}
+.terms{background:#f6f4ee;border:1px solid var(--rule);border-radius:8px;padding:14px 18px 10px;margin:4px 0 20px;font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+.terms>b{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);margin-bottom:6px}
+.terms dl{margin:0 0 8px;display:grid;grid-template-columns:150px 1fr;gap:4px 14px}.terms dt{font-weight:600}.terms dd{margin:0}
+@media (max-width:640px){.terms dl{grid-template-columns:1fr}.terms dd{margin-bottom:6px}}
+table.kinds{border-collapse:collapse;width:100%;margin:6px 0 24px;font:14.5px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+table.kinds th,table.kinds td{border-bottom:1px solid var(--rule);padding:7px 8px;text-align:left;vertical-align:top}
+table.kinds th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
+ol.refs{font-size:15.5px;padding-left:22px}ol.refs li{margin:4px 0}
+@media (max-width:640px){table.kinds{display:block;overflow-x:auto}}
+@media print{#s1{break-before:page}.terms{break-inside:avoid}}
+p.small{font-size:.92em;opacity:.8;margin-top:-.4em}
+</style>
+<style>
+/* Figure 3: business dashboard mockup */
+.bd{font:13.5px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;border:1px solid #cfcac0;border-radius:12px;background:#fff;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.bd-bar{display:flex;align-items:center;gap:6px;background:#efece5;padding:7px 10px;font-size:12px;color:var(--soft)}
+.bd-bar i{width:9px;height:9px;border-radius:50%;background:#d3cdc1;display:inline-block}.bd-bar span{margin-left:8px}
+.bd-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:10px 12px;border-bottom:1px solid var(--rule)}
+.bd-av{width:34px;height:34px;border-radius:50%;background:#2c5a85;color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.bd-who b{display:block;font-size:14.5px}.bd-who small{color:var(--soft);font-size:12.5px}
+.bd-chips{margin-left:auto;display:flex;flex-wrap:wrap;gap:6px}
+.bd-chip{border:1px solid var(--rule);border-radius:999px;padding:1px 9px;font-size:12px;color:var(--soft);display:inline-flex;align-items:center;gap:4px}
+.bd-chip.ok{border-color:#24685a;color:#24685a}
+.bd svg{width:15px;height:15px;flex:none}
+.bd-body{display:grid;grid-template-columns:138px minmax(0,1fr) 190px}
+.bd-side{background:#f8f6f1;border-right:1px solid var(--rule);padding:10px 8px}
+.bd h5{margin:2px 0 7px;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);font-weight:700}
+.bd-sys{display:flex;justify-content:space-between;align-items:center;padding:4px 6px;border-radius:6px;font-size:12.5px}
+.bd-sys em{font-style:normal;background:#9a4f12;color:#fff;border-radius:9px;padding:0 6px;font-size:11px}.bd-sys em.z{background:#e2ded5;color:#55555a}
+.bd-main{padding:10px 12px}
+.bd-ask{background:var(--plan);border-radius:8px;padding:7px 10px;margin-bottom:10px;font-size:12.5px}.bd-ask b{display:block;margin-top:2px}
+.bd-card{border:1px solid var(--rule);border-radius:10px;padding:9px 10px;margin-bottom:10px}
+.bd-card.imp{border:1.5px solid #9a4f12;background:#fffcf8}
+.bd-tag{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:#9a4f12;font-weight:700}
+.bd-card h6{margin:2px 0 6px;font-size:14px}
+.bd-kv{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12.5px;margin-bottom:4px}.bd-kv span{color:var(--soft)}
+.bd-ok{color:#24685a;display:inline-flex;align-items:center;gap:3px}
+.bd-item{display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-top:1px solid #eeebe4;font-size:12.5px}.bd-item:first-of-type{border-top:0}
+.bd-item small{display:block;color:var(--soft);font-size:11.5px}
+.bd-box{width:14px;height:14px;border-radius:3px;background:#2c5a85;flex:none;margin-top:2px;position:relative}
+.bd-box::after{content:"";position:absolute;left:4.5px;top:1.5px;width:3.5px;height:7px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.bd-btn{display:inline-flex;align-items:center;gap:6px;background:#1d1d1f;color:#fff;border-radius:999px;padding:6px 13px;font-weight:600;font-size:12.5px;margin-top:6px}
+.bd-right{border-left:1px solid var(--rule);padding:10px}
+.bd-al{border-radius:8px;padding:6px 8px;margin-bottom:8px;font-size:12.5px;border:1px solid var(--rule)}.bd-al b{display:block}.bd-al small{display:block;color:var(--soft);font-size:11.5px;margin-top:2px}
+.bd-al.warn{background:#fdf1ec;border-color:#f2c9b8}.bd-al.warn b{color:#8a2f12}
+.bd-foot{display:flex;gap:7px;align-items:center;padding:8px 12px;border-top:1px solid var(--rule);background:#f8f6f1;font-size:12px;color:var(--soft)}.bd-foot svg{color:#2c5a85;width:17px;height:17px}
+@media (max-width:760px){.bd-body{grid-template-columns:1fr}.bd-side{border-right:0;border-bottom:1px solid var(--rule)}.bd-sys{display:inline-flex;gap:6px;margin:0 4px 4px 0;border:1px solid var(--rule);background:#fff}.bd-right{border-left:0;border-top:1px solid var(--rule)}.bd-chips{margin-left:0}}
+/* Figure 6: the workflow, step by step */
+.wf{font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;border:1px solid var(--rule);border-radius:12px;background:#fff;padding:12px 14px}
+.wf-head,.wf li{display:grid;grid-template-columns:34px 40px minmax(0,1.3fr) minmax(0,1fr) minmax(0,.8fr);gap:10px;align-items:center}
+.wf-head{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--soft);font-weight:700;padding-bottom:7px;border-bottom:1px solid var(--rule)}
+.wf ol{list-style:none;margin:0;padding:0;position:relative}
+.wf ol::before{content:"";position:absolute;left:16px;top:24px;bottom:24px;border-left:2px dashed #cfcac0}
+.wf li{padding:7px 0;margin:0}
+.wf .n{width:30px;height:30px;border-radius:50%;background:#1d1d1f;color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;position:relative;z-index:1;margin-left:2px}
+.wf .ic{width:38px;height:38px;border-radius:9px;display:grid;place-items:center;border:1.5px solid}.wf .ic svg{width:22px;height:22px}
+.wf .p-person .ic{background:#eef3f8;border-color:#2c5a85;color:#2c5a85}.wf .p-org .ic{background:#edf5f2;border-color:#24685a;color:#24685a}.wf .p-gov .ic{background:#fbf1e6;border-color:#9a4f12;color:#9a4f12}
+.wf .what b{display:block;font-size:14px}.wf .what small{color:var(--soft);font-size:12.5px}
+.wf .who{display:flex;gap:7px;align-items:center;background:#f6f4ee;border-radius:8px;padding:5px 8px}.wf .who svg{width:20px;height:20px;flex:none;color:#24685a}.wf .who b{display:block;font-size:13px}.wf .who small{color:var(--soft);font-size:12px}
+.wf .p-inv .ic{background:#f3eff8;border-color:#5f4b8b;color:#5f4b8b}.wf .note{font-size:12.5px;color:var(--soft)}.wf .note.imp{color:#9a4f12}
+.wf-end{display:flex;gap:8px;align-items:center;margin-top:6px;padding:9px 11px;border-radius:8px;background:#edf5f2;color:#24685a;font-size:13.5px;font-weight:600}.wf-end svg{width:20px;height:20px;flex:none}
+.wf svg,.bd svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+@media (max-width:640px){.wf-head{display:none}.wf li{grid-template-columns:34px 40px minmax(0,1fr)}.wf .who,.wf .note{grid-column:3}}
+</style>
+<style>
+/* Diagrams use a friendly rounded font, kept locally so the papers work offline (SIL Open Font License, fonts/OFL.txt). */
+@font-face{font-family:"Nunito";font-style:normal;font-weight:200 1000;font-display:swap;src:url(fonts/nunito-latin-wght-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Nunito";font-style:normal;font-weight:200 1000;font-display:swap;src:url(fonts/nunito-latin-ext-wght-normal.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+figure svg text,figure svg tspan{font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif}
+.wf,.bd,.terms{font-family:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif}
+</style>
+</head>
+<body>
+<header class="top"><a href="https://tonymcodes.github.io/Agent-Middleground-Protocol/paper/">Part 1: Agent Middleground Protocol</a><a href="index.html" class="on">Part 2: Verification Is All You Need</a><span class="right"><a href="paper.pdf">PDF</a><a href="https://github.com/tonymcodes/Verification-Is-All-You-Need">The code</a></span></header>
+<div class="layout">
+<nav class="toc"><b>Contents</b><ol>
+<li><a href="#abstract">Abstract</a></li>
+<li><a href="#s1">1. Introduction</a></li>
+<li><a href="#s2">2. The business agent and humans in the loop</a></li>
+<li><a href="#s3">3. Workflows</a></li>
+<li><a href="#s4">4. Try it: the sample code</a></li>
+<li><a href="#s5">5. Use cases</a></li>
+<li><a href="#s6">6. Security and limits</a></li>
+<li><a href="#s7">7. Detailed examples</a></li>
+<li class="sub"><a href="#s7-1">7.1 Buying a car</a></li>
+<li class="sub"><a href="#s7-2">7.2 Investors, auditors and a milestone</a></li>
+<li class="sub"><a href="#s7-3">7.3 Watermarked money</a></li>
+<li><a href="#s8">8. Conclusion</a></li>
+<li><a href="#refs">References</a></li>
+</ol></nav>
+<article>
+<h1 id="top">Verification Is All You Need</h1>
+<p class="subtitle">Reimagining today's processes for the agent era as multi-party digital workflows, where authorised people are the humans in the loop who verify each part in a quick and fraud-proof manner</p>
+<p class="byline">Tony Mathew · Early draft, November 2026 · Part 2 of the Agent Middleground Protocol (AMP) papers</p>
+
+<section class="abstract" id="abstract">
+<h2>Abstract</h2>
+<p>Most processes that cross people and organisations are digitised only on the surface: forms, portals and emails, while the workflow is still done in a haphazard manner with information flowing across different channels from one party to the next. In the AI agent era they can be reimagined as <b>multi-party digital workflows</b>, where information and approvals flow instantly through one workflow template shared by every party. There is a second reason. Fakes and fraud will multiply with AI, and today's defences chase fraudsters who simply change identities. This paper turns the focus around: instead of trying to identify fake cases, it confirms genuine cases. The authorised people in companies, government departments and institutions, and the private people involved, are the <b>humans in the loop</b>. Each sees their role related info and action items in one place, via their personal agent or business agent, and approves it. In a company or department, a person's digital login id is linked to a particular role that is authorised for certain approvals in a workflow. Now each such authorised person will see the action items waiting for approval by their particular role and then does a&nbsp;fingerprint swipe to do a digital approval. A genuine workflow will thus carry verification at every step by the authorised person for that step, and anything without this will be flagged as fraud.&nbsp;</p>
+</section>
+
+<figure id="fig1">
+<svg viewBox="0 0 840 446" role="img" aria-label="Four parties each approve their own stage of one workflow with their own swipe; every approval is recorded">
+<defs><marker id="b1-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#3a3a3e"></path></marker><marker id="b1-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#9a4f12"></path></marker></defs>
+<g font-family="Nunito,system-ui,-apple-system,'Segoe UI',sans-serif">
+<rect x="4" y="8" width="198" height="112" rx="14" fill="#edf5f2" stroke="#24685a" stroke-width="1.5"></rect>
+<text x="103" y="45.5" font-size="17.5" fill="#24685a" font-weight="700" text-anchor="middle">A showroom</text>
+<text x="103" y="77.5" font-size="14" fill="#1d1d1f" text-anchor="middle">the sales manager</text>
+<text x="103" y="100.5" font-size="14" fill="#1d1d1f" text-anchor="middle">in a business dashboard</text>
+<path d="M103 122L103 182" fill="none" stroke="#3a3a3e" stroke-width="2" marker-end="url(#b1-a)"></path>
+<text x="111" y="156" font-size="13" fill="#5b5b60">own swipe</text>
+<rect x="215" y="8" width="198" height="112" rx="14" fill="#eef3f8" stroke="#2c5a85" stroke-width="1.5"></rect>
+<text x="314" y="45.5" font-size="17.5" fill="#2c5a85" font-weight="700" text-anchor="middle">A person</text>
+<text x="314" y="77.5" font-size="14" fill="#1d1d1f" text-anchor="middle">the buyer</text>
+<text x="314" y="100.5" font-size="14" fill="#1d1d1f" text-anchor="middle">in their personal agent</text>
+<path d="M314 122L314 182" fill="none" stroke="#3a3a3e" stroke-width="2" marker-end="url(#b1-a)"></path>
+<text x="322" y="156" font-size="13" fill="#5b5b60">own swipe</text>
+<rect x="426" y="8" width="198" height="112" rx="14" fill="#edf5f2" stroke="#24685a" stroke-width="1.5"></rect>
+<text x="525" y="45.5" font-size="17.5" fill="#24685a" font-weight="700" text-anchor="middle">A bank</text>
+<text x="525" y="77.5" font-size="14" fill="#1d1d1f" text-anchor="middle">the loan officer</text>
+<text x="525" y="100.5" font-size="14" fill="#1d1d1f" text-anchor="middle">in a business dashboard</text>
+<path d="M525 122L525 182" fill="none" stroke="#3a3a3e" stroke-width="2" marker-end="url(#b1-a)"></path>
+<text x="533" y="156" font-size="13" fill="#5b5b60">own swipe</text>
+<rect x="637" y="8" width="198" height="112" rx="14" fill="#fbf1e6" stroke="#9a4f12" stroke-width="1.5"></rect>
+<text x="736" y="45.5" font-size="17.5" fill="#9a4f12" font-weight="700" text-anchor="middle">A motor office</text>
+<text x="736" y="77.5" font-size="14" fill="#1d1d1f" text-anchor="middle">the registration officer</text>
+<text x="736" y="100.5" font-size="14" fill="#1d1d1f" text-anchor="middle">in an office dashboard</text>
+<path d="M736 122L736 182" fill="none" stroke="#3a3a3e" stroke-width="2" marker-end="url(#b1-a)"></path>
+<text x="744" y="156" font-size="13" fill="#5b5b60">own swipe</text>
+<rect x="4" y="188" width="832" height="142" rx="14" fill="#f6f4ee" stroke="#1d1d1f" stroke-width="2"></rect>
+<text x="420" y="218" font-size="16" fill="#1d1d1f" font-weight="700" text-anchor="middle">The workflow: published rules, on its owner’s server</text>
+<rect x="20" y="236" width="166" height="76" rx="10" fill="#ffffff" stroke="#b9b3a6" stroke-width="1.5"></rect>
+<text x="103" y="266" font-size="15" fill="#1d1d1f" font-weight="700" text-anchor="middle">1 · Approves</text>
+<text x="103" y="292" font-size="15" fill="#1d1d1f" text-anchor="middle">the price</text>
+<path d="M188 274L227 274" fill="none" stroke="#3a3a3e" stroke-width="2" marker-end="url(#b1-a)"></path>
+<rect x="231" y="236" width="166" height="76" rx="10" fill="#ffffff" stroke="#b9b3a6" stroke-width="1.5"></rect>
+<text x="314" y="266" font-size="15" fill="#1d1d1f" font-weight="700" text-anchor="middle">2 · Confirms</text>
+<text x="314" y="292" font-size="15" fill="#1d1d1f" text-anchor="middle">the order</text>
+<path d="M399 274L438 274" fill="none" stroke="#3a3a3e" stroke-width="2" marker-end="url(#b1-a)"></path>
+<rect x="442" y="236" width="166" height="76" rx="10" fill="#ffffff" stroke="#b9b3a6" stroke-width="1.5"></rect>
+<text x="525" y="266" font-size="15" fill="#1d1d1f" font-weight="700" text-anchor="middle">3 · Sanctions</text>
+<text x="525" y="292" font-size="15" fill="#1d1d1f" text-anchor="middle">the loan</text>
+<path d="M610 274L649 274" fill="none" stroke="#3a3a3e" stroke-width="2" marker-end="url(#b1-a)"></path>
+<rect x="653" y="236" width="166" height="76" rx="10" fill="#ffffff" stroke="#b9b3a6" stroke-width="1.5"></rect>
+<text x="736" y="266" font-size="15" fill="#1d1d1f" font-weight="700" text-anchor="middle">4 · Registers</text>
+<text x="736" y="292" font-size="15" fill="#1d1d1f" text-anchor="middle">the car</text>
+<rect x="4" y="350" width="832" height="86" rx="14" fill="#ffffff" stroke="#b9b3a6" stroke-width="1.5" stroke-dasharray="6 5"></rect>
+<text x="420" y="384" font-size="15" fill="#1d1d1f" text-anchor="middle">Every approval: the person’s own swipe, in their role for the exact details</text>
+<text x="420" y="412" font-size="14.5" fill="#5b5b60" text-anchor="middle">kept in the person’s log, each organisation’s log and public receipts</text>
+</g></svg>
+<figcaption><b>Figure 1.</b> One workflow involving four parties. Each authorised person, who is the human in the loop for their part, approves only their own stage by using their own fingerprint swipe linked to their role, and sees the info inside their existing work or personal dashboards. Every approval is logged.</figcaption>
+</figure>
+
+<div class="terms"><b>Words used in this paper</b>
+<dl>
+<dt>Workflow</dt><dd>Published rules for a process that cuts across people and organisations: the parties, the steps, and who approves each step. One template, shared by every party involved.</dd>
+<dt>Human in the loop</dt><dd>An authorised person who must verify and approve one part of a workflow before it moves on.</dd>
+<dt>Business agent</dt><dd>An organisation's agent: it brings the data, alerts and approvals from all its systems into one dashboard for each role.</dd>
+<dt>Role signature</dt><dd>An approval made for an organisation: the person's own fingerprint swipe, together with the role their organisation approved for them.</dd>
+</dl></div>
+
+<h2 id="s1">1. Introduction</h2>
+<p class="lead">Most processes that cross people and organisations, such as buying a car, registering a birth or paying a supplier, are digital only on the surface. This paper proposes rebuilding them for the agent era as multi-party digital workflows, in which each authorised person verifies and approves their own part instantly and in a fraud-proof manner.</p>
+
+<p>Today such a process that involves multiple disconnected parties, moves as forms, portals and emails. This involves each stage being done digitally inside a company's system, but then it has to be passed on to another company or individual. Even though this may be done digitally via email, the workflow loses continuity and is slowed down. Also on seeing information as email or pdf means each party also has to trust documents it cannot verify by itself. For example, a digital invoice via email or as pdf can arrive with the supplier's logo and the name of its accounts manager, but a logo can be copied, a name typed and an email address made to look right. The invoice is supposed to be approved by someone with the authority to do so, yet that authority is never shown in a way anyone can check. There are two reasons to change this now.</p>
+
+<p><b>Agents need shared workflows.</b> Agents can resolve the verification part by carrying the required info and checking it. But for this to happen, the information and the approvals need to flow through one workflow template that every party shares, instead of through emails and portals.&nbsp;</p>
+
+<p><b>Fakes will multiply, and chasing them does not work.</b> AI makes the occurrence of convincing fakes more widespread. Blocklists, spam filters and fraud scores try to identify the fraudsters, but fraudsters simply change their names, numbers and accounts and start again. This paper turns the focus around by instead trying to identify and confirm the genuine players instead (Figure 2). A genuine step carries the verification of the authorised person who approved it, and anything without that verification stands out, whatever name it uses.</p>
+
+<figure id="fig2">
+<svg viewBox="0 0 840 262" role="img" aria-label="Today a blocklist catches a known fraudster but misses a new identity; with verification, the genuine step is accepted and anything else stands out">
+<defs><marker id="b2-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#3a3a3e"></path></marker><marker id="b2-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#9a4f12"></path></marker></defs>
+<g font-family="Nunito,system-ui,-apple-system,'Segoe UI',sans-serif">
+<rect x="4" y="6" width="410" height="250" rx="14" fill="#ffffff" stroke="#b9b3a6" stroke-width="1.5" stroke-dasharray="6 5"></rect>
+<rect x="426" y="6" width="410" height="250" rx="14" fill="#f6f4ee" stroke="#1d1d1f" stroke-width="2"></rect>
+<text x="209" y="38" font-size="17" fill="#1d1d1f" font-weight="700" text-anchor="middle">Today: catch the fakes</text>
+<text x="209" y="62" font-size="13.5" fill="#5b5b60" text-anchor="middle">look for known fraudsters</text>
+<text x="631" y="38" font-size="17" fill="#1d1d1f" font-weight="700" text-anchor="middle">With verified workflows: confirm the genuine</text>
+<text x="631" y="62" font-size="13.5" fill="#5b5b60" text-anchor="middle">look for the authorised approval</text>
+<rect x="20" y="84" width="214" height="66" rx="10" fill="#fbf1e6" stroke="#9a4f12" stroke-width="1.5"></rect>
+<text x="127" y="112" font-size="14.5" fill="#1d1d1f" text-anchor="middle">“Northbank” invoice</text>
+<text x="127" y="134" font-size="14.5" fill="#5b5b60" text-anchor="middle">from a known fraudster</text>
+<path d="M236 117L278 117" fill="none" stroke="#3a3a3e" stroke-width="2" marker-end="url(#b2-a)"></path>
+<text x="286" y="123" font-size="15" fill="#24685a" font-weight="700">blocked</text>
+<rect x="20" y="166" width="214" height="66" rx="10" fill="#fbf1e6" stroke="#9a4f12" stroke-width="1.5"></rect>
+<text x="127" y="194" font-size="14.5" fill="#1d1d1f" text-anchor="middle">same fraudster,</text>
+<text x="127" y="216" font-size="14.5" fill="#5b5b60" text-anchor="middle">new name and number</text>
+<path d="M236 199L278 199" fill="none" stroke="#3a3a3e" stroke-width="2" marker-end="url(#b2-a)"></path>
+<text x="286" y="205" font-size="15" fill="#9a4f12" font-weight="700">gets through</text>
+<rect x="442" y="84" width="214" height="66" rx="10" fill="#edf5f2" stroke="#24685a" stroke-width="1.5"></rect>
+<text x="549" y="112" font-size="14.5" fill="#1d1d1f" text-anchor="middle">approved by the bank’s</text>
+<text x="549" y="134" font-size="14.5" fill="#5b5b60" text-anchor="middle">officer, in role</text>
+<path d="M658 117L700 117" fill="none" stroke="#3a3a3e" stroke-width="2" marker-end="url(#b2-a)"></path>
+<text x="708" y="123" font-size="15" fill="#24685a" font-weight="700">accepted</text>
+<rect x="442" y="166" width="214" height="66" rx="10" fill="#fbf1e6" stroke="#9a4f12" stroke-width="1.5"></rect>
+<text x="549" y="194" font-size="14.5" fill="#1d1d1f" text-anchor="middle">no verification,</text>
+<text x="549" y="216" font-size="14.5" fill="#5b5b60" text-anchor="middle">whatever the name</text>
+<path d="M658 199L700 199" fill="none" stroke="#3a3a3e" stroke-width="2" marker-end="url(#b2-a)"></path>
+<text x="708" y="205" font-size="15" fill="#9a4f12" font-weight="700">rejected</text>
+</g></svg>
+<figcaption><b>Figure 2.</b> Turning the focus around. A blocklist catches a fraudster only until they change identity. Verified workflow confirms the genuine players instead, so a new identity does not help a scammer since only a genuine person can verify and complete a required step in a shared workflow.</figcaption>
+</figure>
+
+<p>Part 1, the <a href="https://tonymcodes.github.io/Agent-Middleground-Protocol/paper/">Agent Middleground Protocol (AMP)</a> [1], introduced the personal agent, through which a person approves things with their own fingerprint swipe and then sends the data to Agent Middleground where it interacts with data from companies. This paper does the same for organisations, through the business agent, so that people who act for a company or an office also approve with their own swipe, the steps authorised for their role in any number of workflows.</p>
+
+<h3 id="s1-paper"><span style="font-size: 26px;">2. The business agent and humans in the loop</span></h3>
+<p class="lead">As agents automate lots of interactions, a good part of a person's job becomes checking and approving. The business agent is where people in companies, government offices and institutions do it.</p>
+
+<p><b>Everything in one place.</b> A personal agent gathers a person's many apps into one list, and a business agent does the same at work. Today a head of people opens the hiring tool, the HR records, the IT access system and the training site one by one, and a government officer moves between several case systems. A business agent connects to all of these products through their APIs, and brings their data, alerts and pending approvals into one dashboard for each role (Figure 3). The person reads the summaries, asks questions across systems, and approves. Small items can be approved together with one swipe, and anything important gets an approval screen of its own.</p>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"></path></symbol>
+<symbol id="i-store" viewBox="0 0 24 24"><path d="M4 10v10h16V10M3 10l2-6h14l2 6zM9.5 20v-5h5v5"></path></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.4 8.2-8 9-4.6-.8-8-4-8-9V6z"></path><path d="M8.5 12l2.4 2.4 4.6-4.6"></path></symbol>
+<symbol id="i-bank" viewBox="0 0 24 24"><path d="M3 9.5L12 4l9 5.5zM5.5 10v8M10 10v8M14 10v8M18.5 10v8M3 20.5h18"></path></symbol>
+<symbol id="i-gov" viewBox="0 0 24 24"><path d="M7.5 8.5a4.5 4.5 0 0 1 9 0M12 2.5V4M4 10h16M5.5 10v8M10 10v8M14 10v8M18.5 10v8M3 20.5h18"></path></symbol>
+<symbol id="i-finger" viewBox="0 0 24 24"><path d="M7.5 10.5a4.5 4.5 0 0 1 9 0v2.5M10 10.5a2 2 0 0 1 4 0v3.5c0 2.6-.8 4.6-2 6M12 10.5V14c0 2-.5 3.6-1.5 5M5.2 13.8c0-1 .1-1.9.4-2.8M19 13c0 2.6-.5 4.8-1.5 6.5M7.5 15c.1 1.5.5 2.9 1.1 4.2"></path></symbol>
+<symbol id="i-building" viewBox="0 0 24 24"><path d="M5 21V4h10v17M15 9h4v12M3 21h18M8 8h4M8 12h4M8 16h4"></path></symbol>
+<symbol id="i-audit" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"></path><path d="M14 3v4h4"></path><path d="M9 14l2 2 4-4"></path></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20h16M6 16l4-4 3 3 5-6"></path><path d="M15 9h3v3"></path></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M8 12.3l2.7 2.7L16 9.7"></path></symbol>
+</defs></svg>
+<figure id="fig3">
+<div class="bd" role="img" aria-label="Mockup of a business dashboard for the Head of People at Kestrel Labs">
+<div class="bd-bar"><i></i><i></i><i></i><span>Kestrel Labs · business dashboard</span></div>
+<div class="bd-top"><div class="bd-av">NT</div><div class="bd-who"><b>Nadia Thomas</b><small>Head of People · Kestrel Labs</small></div>
+<div class="bd-chips"><span class="bd-chip">signed in · work ID KL-0217</span><span class="bd-chip ok"><svg><use href="#i-finger"></use></svg> fingerprint linked to this role</span></div></div>
+<div class="bd-body">
+<div class="bd-side"><h5>Connected</h5>
+<div class="bd-sys">Hiring <em>1</em></div><div class="bd-sys">HR records <em>1</em></div><div class="bd-sys">IT access <em>1</em></div><div class="bd-sys">Training <em>1</em></div><div class="bd-sys">Office <em>1</em></div><div class="bd-sys">Background checks <em class="z">0</em></div></div>
+<div class="bd-main">
+<div class="bd-ask">Ask across systems: <i>“Who joins in January, and is everything ready for them?”</i><b>4 joiners · 3 ready · 1 laptop still to ship</b></div>
+<h5>Waiting for your approval · 5</h5>
+<div class="bd-card imp"><span class="bd-tag">Important · a screen of its own</span>
+<h6>Job offer: Anjali, backend engineer, Bengaluru</h6>
+<div class="bd-kv"><span>Pay</span><div>₹20 lakh a year, within the approved range ₹18–22 lakh</div>
+<span>Starts</span><div>5 January</div>
+<span>Hiring manager</span><div class="bd-ok"><svg><use href="#i-check"></use></svg> approved · Sam Varghese, Engineering lead</div>
+<span>Proof</span><div class="bd-ok"><svg><use href="#i-check"></use></svg> skills, experience and degree, signed</div></div>
+<span class="bd-btn"><svg><use href="#i-finger"></use></svg> Approve with fingerprint</span></div>
+<div class="bd-card"><span class="bd-tag" style="color:var(--soft)">4 small items · one swipe for the list</span>
+<div class="bd-item"><span class="bd-box"></span><div>Access to the design files for Maya Lin<small>IT access · asked by her manager</small></div></div>
+<div class="bd-item"><span class="bd-box"></span><div>3 days' leave for Rohan Das<small>HR records · from 12 December</small></div></div>
+<div class="bd-item"><span class="bd-box"></span><div>Safety course for 6 new joiners<small>Training · 2 hours, online</small></div></div>
+<div class="bd-item"><span class="bd-box"></span><div>Visitor badge for a candidate, Tuesday<small>Office · interview at 11 am</small></div></div>
+<span class="bd-btn"><svg><use href="#i-finger"></use></svg> Swipe once to approve 4 items</span></div>
+</div>
+<div class="bd-right"><h5>Alerts</h5>
+<div class="bd-al warn"><b>Unverified offer letter</b>A candidate forwarded an offer letter in Kestrel Labs' name, sent from an outside email. No role signature behind it.<small>marked unverified · the candidate is told</small></div>
+<div class="bd-al"><b>Background check done</b>Anjali: signed by Trustline Checks<small><span class="bd-ok"><svg><use href="#i-check"></use></svg> certificate token, checked</span></small></div>
+<h5>Updates</h5>
+<div class="bd-al"><b>Imran S. accepted his offer</b><small>with his own swipe</small></div>
+<div class="bd-al"><b>Laptops for 3 joiners shipped</b><small>from IT's workflow</small></div>
+</div></div>
+<div class="bd-foot"><svg><use href="#i-finger"></use></svg> Each approval here carries your role signature: Nadia Thomas, Head of People, Kestrel Labs.</div>
+</div>
+<figcaption><b>Figure 3.</b> A mockup of a business dashboard for one role: the Head of People at a software company. The company's business agent brings the work from six products into one screen. The job offer is important, so it gets a screen of its own; four small items go together under one swipe. An offer letter sent in the company's name with no role signature behind it is flagged, which is how fake job offers stand out.</figcaption>
+</figure>
+
+<p><b>Roles.</b> The organisation gives each authorised person a role, such as "head of people" or "registration officer", and publishes a signed list of its roles and the workflows that each role is authorised for. The person signs in with their official work ID, as they do today, and the organisation signs a <b>role pass</b> for them, which says that this person holds this role here and approves with the passkey of this device (Figure 4). Alerts and approvals are sent to the role, so they reach whoever holds it at the time.</p>
+
+<figure id="fig4">
+<svg viewBox="0 0 840 166" role="img" aria-label="Sign in with the work ID, the role, the person’s own swipe, and the approval signed in that role">
+<defs><marker id="b4-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#3a3a3e"></path></marker><marker id="b4-t" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#9a4f12"></path></marker></defs>
+<g font-family="Nunito,system-ui,-apple-system,'Segoe UI',sans-serif">
+<rect x="4" y="8" width="190" height="150" rx="14" fill="#eef3f8" stroke="#2c5a85" stroke-width="1.5"></rect>
+<text x="99" y="45" font-size="17" fill="#2c5a85" font-weight="700" text-anchor="middle">1 Sign in</text>
+<text x="99" y="77" font-size="14.5" fill="#1d1d1f" text-anchor="middle">with the official</text>
+<text x="99" y="101" font-size="14.5" fill="#1d1d1f" text-anchor="middle">work ID, as today</text>
+<path d="M196 83L215 83" fill="none" stroke="#3a3a3e" stroke-width="2" marker-end="url(#b4-a)"></path>
+<rect x="217" y="8" width="190" height="150" rx="14" fill="#edf5f2" stroke="#24685a" stroke-width="1.5"></rect>
+<text x="312" y="45" font-size="17" fill="#24685a" font-weight="700" text-anchor="middle">2 The role</text>
+<text x="312" y="77" font-size="14.5" fill="#1d1d1f" text-anchor="middle">“Loan officer,</text>
+<text x="312" y="101" font-size="14.5" fill="#1d1d1f" text-anchor="middle">Northbank”, from</text>
+<text x="312" y="125" font-size="14.5" fill="#1d1d1f" text-anchor="middle">its signed list</text>
+<path d="M409 83L428 83" fill="none" stroke="#3a3a3e" stroke-width="2" marker-end="url(#b4-a)"></path>
+<rect x="430" y="8" width="190" height="150" rx="14" fill="#eef3f8" stroke="#2c5a85" stroke-width="1.5"></rect>
+<text x="525" y="45" font-size="17" fill="#2c5a85" font-weight="700" text-anchor="middle">3 Own swipe</text>
+<text x="525" y="77" font-size="14.5" fill="#1d1d1f" text-anchor="middle">the person’s own</text>
+<text x="525" y="101" font-size="14.5" fill="#1d1d1f" text-anchor="middle">fingerprint, linked</text>
+<text x="525" y="125" font-size="14.5" fill="#1d1d1f" text-anchor="middle">to the role</text>
+<path d="M622 83L641 83" fill="none" stroke="#3a3a3e" stroke-width="2" marker-end="url(#b4-a)"></path>
+<rect x="643" y="8" width="190" height="150" rx="14" fill="#f6f4ee" stroke="#1d1d1f" stroke-width="2"></rect>
+<text x="738" y="45" font-size="17" fill="#1d1d1f" font-weight="700" text-anchor="middle">4 Approval</text>
+<text x="738" y="77" font-size="14.5" fill="#1d1d1f" text-anchor="middle">signed over the</text>
+<text x="738" y="101" font-size="14.5" fill="#1d1d1f" text-anchor="middle">exact details, in</text>
+<text x="738" y="125" font-size="14.5" fill="#1d1d1f" text-anchor="middle">this role</text>
+</g></svg>
+<figcaption><b>Figure 4.</b> How a person approves in a role. They sign in with their official work ID, their own fingerprint swipe is linked to that role, and each approval carries both.</figcaption>
+</figure>
+
+<p><b>The role signature.</b> In Part 1, a personal agent's approval is signed by the passkey on the person's own device, and proves that this particular person approved it. An approval made for an organisation carries the role pass as well. Together the two make a <b>role signature</b>, which proves that an authorised person approved on behalf of the organisation.</p>
+<table class="kinds">
+<tbody><tr><th></th><th>Personal agent (Part 1)</th><th>Business agent (this paper)</th></tr>
+<tr><td>Signed with</td><td>the person's own device passkey</td><td>the person's own device passkey, and the role pass their organisation signed</td></tr>
+<tr><td>Proves</td><td>this person approved this</td><td>this person, in this role, approved this for the organisation</td></tr>
+<tr><td>Seen in</td><td>the person's list</td><td>the dashboard for the role</td></tr>
+</tbody></table>
+<p>Neither part is enough on its own. A stolen password comes without the person's fingerprint, and a real employee acting outside their role is refused. When someone leaves a role, their swipe no longer counts for approvals linked to that role. Every approval is signed over its exact details, such as the price the buyer saw, so it cannot be reused for anything else. A private person involved in a workflow, such as a buyer or a parent, is also a human in the loop, and approves as themselves.</p>
+
+<h2 id="s3">3. Workflows</h2>
+<p><i>There are two possible options to host and run a workflow</i></p><p><b>3.1 Run on the owner's server.</b> The organisation in charge of a process can publish a workflow as a signed template, which lists the parties, the steps, who approves each step, and what passes between them. It then runs the workflow on its own server. This works like an online form that every party's agent visits to see what is waiting for its role, read the details and hand in an approval. No one logs in to a portal: each person sees their part in their own dashboard, fetched by business or personal agent. The server accepts an approval only from the right person, in the right role, at the right step. Anything else is refused, recorded and shown to the involved parties as an alert. Each involved party can view the case file.</p>
+
+<p><b>Records.</b> Every approval and refusal is written to the owner's log. Each entry holds a fingerprint of the entry before it, so no entry can be removed without it showing. Public receipts show only these fingerprints, and each party keeps its own copy of the log to check against them.</p>
+
+<p><b>3.2 Use an Agent Middleground.</b> When the details must stay hidden from some parties, a workflow can run in an Agent Middleground instead, as described in Part 1. Each party brings its details there, the published rules work out the result, the humans in the loop still approve their parts, and each party takes back only a confirmation token. The sample code includes one such workflow, a sealed tender.</p>
+
+<h2 id="s4">4. Try it: the sample code</h2>
+<p>The sample code for this paper is public at <a href="https://github.com/tonymcodes/Verification-Is-All-You-Need">github.com/tonymcodes/Verification-Is-All-You-Need</a>. It is starter code: it runs both kinds of workflow on one computer, and needs only Node.js, version 18 or later. In the car purchase of section 7, each person signs in with a work ID and sees their own screen. Every party sees the case file and can check every approval again, and a stranger using a copied name and work ID is refused (Figure 5).</p>
+<figure id="fig5"><div class="pair"><img src="images/p2/car-dashboard.png" alt="The loan officer's screen in the sample: the loan waiting for her approval, and an alert that a forged pass was refused"><img src="images/p2/car-casefile.png" alt="The case file in the sample: each step with who approved it, in which role, and the details"></div>
+<figcaption><b>Figure 5 (from the sample).</b> Left, the bank's loan officer: the loan waits for her role signature, and an alert shows that someone claiming to be her was refused. Right, the case file every party sees: each step with who approved it, in which role.</figcaption></figure>
+<pre class="cmd">git clone https://github.com/tonymcodes/Verification-Is-All-You-Need
+cd Verification-Is-All-You-Need
+npm start          then open http://localhost:8800
+npm test           runs the checks</pre>
+<p class="small"><i>In the sample a ticked box stands in for the fingerprint, unless a device's real fingerprint is linked to the person.</i></p>
+
+<h2 id="s5">5. Example use cases</h2>
+<ul>
+<li><b>Change of address.</b> A person records a change of address in their personal agent. This can initiate a workflow that passes information to verification authorities like electoral department, etc and then uses the verified address to send address change intimation to&nbsp; bank, employer, etc</li><li><b>A prescription.</b> The doctor signs the prescription in their role, and the pharmacist checks that signature before handing over the medicine.</li>
+<li><b>An admission.</b> The department, the scholarship committee and a parent each approve their own part relevant for a student's admission offer.</li>
+<li><b>A supply chain.</b> Orders, deliveries and invoices each carry the approval of the person responsible, so even the smallest supplier can be paid as soon as the goods arrive.</li>
+<li><b>Inside a company.</b> Expenses and contracts are approved in roles, and critical steps in software, such as a release to customers, wait until the right person approves.</li>
+<li><b>Watermarked money.</b> Every unit of digital money carries a watermark naming its owner, and a payment moves only with the verification set for its level. A scam payment can be stopped by a trusted contact, and money taken by a proven fraud can be returned. This is explored in detail in section 7.3.</li><li><b>When someone dies</b>. The hospital and the registrar confirm the death, and the heirs give their consent. Each bank, insurer and pension office then acts in its role, and the family follows one list instead of making months of visits.</li><li><b>A new baby.</b> The hospital confirms the birth, both parents give their consent, the registrar registers it, and the benefits office approves the child benefit.</li><li><b>Donations and relief.</b> Money is released in stages, as field officers and auditors confirm each stage, and money goes straight to verified accounts.</li></ul>
+
+<h2 id="s6">6. Security and limits</h2>
+<p>A stolen password is not enough, because every approval needs the person's own fingerprint. A real employee acting outside their role is refused, and the refusal is recorded. A copied logo, name or work ID carries no role signature, and a workflow that has been changed no longer matches its owner's signature. Large decisions can need more than one person, such as two of three committee members. A lost phone still needs the fingerprint, and the organisation can suspend the role at once.</p>
+<p>There are limits. Verification proves who approved and in which role, but not that the decision was wise. It also does not stop someone from misusing their own authority, although every step they take is recorded.</p>
+
+<h2 id="s7">7. Detailed examples</h2>
+<h3 id="s7-1">7.1 Buying a car</h3>
+<p><b>Today.</b> Ravi buys a car with insurance and a loan. The showroom, the insurer, the bank and the motor department pass papers and scans between them, and each one checks documents it has no way to verify.</p>
+<p><b>The workflow.</b> The motor department publishes the workflow, since every car sale has to end with registration, and runs it on its own server. Five parties take part, each from its own dashboard or personal agent (Figure 6).</p>
+<figure id="fig6">
+<div class="wf" role="img" aria-label="The car purchase in eight numbered steps, each verified by one named person in their role">
+<div class="wf-head"><span></span><span></span><span>Step</span><span>Verified by: own fingerprint, in role</span><span>Note</span></div>
+<ol>
+<li class="p-org"><span class="n">1</span><span class="ic"><svg><use href="#i-store"></use></svg></span><div class="what"><b>Approves the car and price</b><small>Sunrise Motors, the showroom</small></div><div class="who"><svg><use href="#i-finger"></use></svg><span><b>Meera Shah</b><small>Sales manager</small></span></div><div class="note">Hatchback · ₹9,20,000</div></li>
+<li class="p-person"><span class="n">2</span><span class="ic"><svg><use href="#i-person"></use></svg></span><div class="what"><b>Confirms the order</b><small>the buyer</small></div><div class="who"><svg><use href="#i-finger"></use></svg><span><b>Ravi Kumar</b><small>as himself</small></span></div><div class="note imp">important: a screen of its own</div></li>
+<li class="p-person"><span class="n">3</span><span class="ic"><svg><use href="#i-person"></use></svg></span><div class="what"><b>Shares details with the insurer and bank</b><small>the buyer</small></div><div class="who"><svg><use href="#i-finger"></use></svg><span><b>Ravi Kumar</b><small>as himself</small></span></div><div class="note">small: can go in a list</div></li>
+<li class="p-org"><span class="n">4</span><span class="ic"><svg><use href="#i-shield"></use></svg></span><div class="what"><b>Issues the insurance policy</b><small>Lotus Insurance</small></div><div class="who"><svg><use href="#i-finger"></use></svg><span><b>Arjun Rao</b><small>Underwriter</small></span></div><div class="note">policy LI-7781</div></li>
+<li class="p-org"><span class="n">5</span><span class="ic"><svg><use href="#i-bank"></use></svg></span><div class="what"><b>Sanctions the loan</b><small>Northbank</small></div><div class="who"><svg><use href="#i-finger"></use></svg><span><b>Kavya Iyer</b><small>Loan officer</small></span></div><div class="note">₹7,00,000 · 5 years</div></li>
+<li class="p-person"><span class="n">6</span><span class="ic"><svg><use href="#i-person"></use></svg></span><div class="what"><b>Accepts the loan and the bank's claim</b><small>the buyer</small></div><div class="who"><svg><use href="#i-finger"></use></svg><span><b>Ravi Kumar</b><small>as himself</small></span></div><div class="note imp">important: a screen of its own</div></li>
+<li class="p-org"><span class="n">7</span><span class="ic"><svg><use href="#i-bank"></use></svg></span><div class="what"><b>Confirms the showroom is paid</b><small>Northbank</small></div><div class="who"><svg><use href="#i-finger"></use></svg><span><b>Kavya Iyer</b><small>Loan officer</small></span></div><div class="note">loan paid out</div></li>
+<li class="p-gov"><span class="n">8</span><span class="ic"><svg><use href="#i-gov"></use></svg></span><div class="what"><b>Registers the car</b><small>Motor Department</small></div><div class="who"><svg><use href="#i-finger"></use></svg><span><b>Anita Das</b><small>Registration officer</small></span></div><div class="note">bank's claim noted</div></li>
+</ol>
+<div class="wf-end"><svg><use href="#i-check"></use></svg> Done: the registration certificate is in Ravi's agent, and every step is in the motor department's log.</div>
+</div>
+<figcaption><b>Figure 6.</b> The car purchase, step by step. Each step is verified by one person with their own fingerprint, in their role; the buyer approves as himself. Five parties, eight steps, one workflow hosted on the motor department's server.</figcaption>
+</figure>
+<p><b>What changes.</b> Each step is approved only by the person who is authorised for that step.&nbsp; The registration officer sees the whole case, with the approval behind each part. No one carries papers between offices. A fake insurance policy or a forged loan letter has no role signature behind it, so it cannot enter this workflow. Years later, when the loan is repaid, the bank releases its claim on the car using a new workflow that refers to the old one and the registration authority updates it.</p>
+
+<h3 id="s7-2">7.2 Investors, auditors and a milestone</h3>
+<p><b>Today.</b> A young company sends its investors a quarterly report as slides and spreadsheets. The investors cannot tell whether the numbers have been polished, the auditor checks them months later, and money promised on reaching a milestone moves only after weeks of emails and calls.</p>
+<p><b>The workflow.</b> The company runs an investor-reporting workflow on its own server. Its current investors and its auditor are parties to it, so they see the actual numbers: revenue from the payment processor, users from the analytics tool and cash from the bank, each taken straight from the system that produced it. The lead investor's agreement says that the second tranche of its investment, ₹5 crore, is paid once quarterly revenue has been above ₹2 crore for three quarters in a row (Figure 7).</p>
+<figure id="fig7">
+<div class="wf" role="img" aria-label="A milestone payment in seven numbered steps, each verified by one named person in their role">
+<div class="wf-head"><span></span><span></span><span>Step</span><span>Verified by: own fingerprint, in role</span><span>Note</span></div>
+<ol>
+<li class="p-org"><span class="n">1</span><span class="ic"><svg><use href="#i-building"></use></svg></span><div class="what"><b>Prepares the quarter's numbers</b><small>Fernhill Robotics, the company</small></div><div class="who"><svg><use href="#i-finger"></use></svg><span><b>Arun Joseph</b><small>Finance head</small></span></div><div class="note">pulled from the bank, payments and analytics</div></li>
+<li class="p-org"><span class="n">2</span><span class="ic"><svg><use href="#i-building"></use></svg></span><div class="what"><b>Signs off the report</b><small>Fernhill Robotics</small></div><div class="who"><svg><use href="#i-finger"></use></svg><span><b>Dev Malhotra</b><small>Chief executive</small></span></div><div class="note">shared with investors and the auditor</div></li>
+<li class="p-gov"><span class="n">3</span><span class="ic"><svg><use href="#i-audit"></use></svg></span><div class="what"><b>Reviews and attests the accounts</b><small>Calder &amp; Co, the auditor</small></div><div class="who"><svg><use href="#i-finger"></use></svg><span><b>Priya Raman</b><small>Audit partner</small></span></div><div class="note">matched to bank and payment records</div></li>
+<li class="p-inv"><span class="n">4</span><span class="ic"><svg><use href="#i-chart"></use></svg></span><div class="what"><b>Checks the milestone</b><small>Northstar Ventures, lead investor</small></div><div class="who"><svg><use href="#i-finger"></use></svg><span><b>Sana Qureshi</b><small>Investment analyst</small></span></div><div class="note">revenue above ₹2 crore, 3 quarters: met</div></li>
+<li class="p-inv"><span class="n">5</span><span class="ic"><svg><use href="#i-chart"></use></svg></span><div class="what"><b>Approves the second tranche</b><small>Northstar Ventures</small></div><div class="who"><svg><use href="#i-finger"></use></svg><span><b>Elena Costa</b><small>Partner</small></span></div><div class="note imp">important: ₹5 crore, a screen of its own</div></li>
+<li class="p-inv"><span class="n">6</span><span class="ic"><svg><use href="#i-chart"></use></svg></span><div class="what"><b>Co-approves the tranche</b><small>Northstar Ventures</small></div><div class="who"><svg><use href="#i-finger"></use></svg><span><b>Kwame Mensah</b><small>Partner</small></span></div><div class="note">two of three partners; then the money is sent, carrying both approvals</div></li>
+<li class="p-org"><span class="n">7</span><span class="ic"><svg><use href="#i-building"></use></svg></span><div class="what"><b>Confirms the money has arrived</b><small>Fernhill Robotics</small></div><div class="who"><svg><use href="#i-finger"></use></svg><span><b>Arun Joseph</b><small>Finance head</small></span></div><div class="note">₹5 crore received</div></li>
+</ol>
+<div class="wf-end"><svg><use href="#i-check"></use></svg> Done: the tranche is paid, and the company, the auditor and every investor hold the same record of who prepared, checked and approved what.</div>
+</div>
+<figcaption><b>Figure 7.</b> A milestone payment, step by step. The company, its auditor and its lead investor each verify their own part, in their roles, on the company's workflow. A large payment needs two partners.</figcaption>
+</figure>
+<p><b>What changes.</b> Every number carries the role signatures of the people who prepared, checked and approved it, and every investor sees the same record. When the milestone is met, an alert appears in the fund's dashboard, "Milestone met: release ₹5 crore?", and the money moves only when two partners approve. Nothing is passed around by email, and a report polished outside the workflow has no signatures behind it.</p>
+
+<h3 id="s7-3">7.3 Watermarked money: a verified workflow based approach to stop financial frauds</h3>
+<p><b>Today.</b> Digital money is guarded by one secret, such as a PIN, a password or an approval on the phone, and once it moves it is gone. Lakshmi, a retired teacher in Kochi, gets a call from a man who says he is from her bank's fraud team. He tells her that her account is under attack and that she must move ₹2,00,000 to a "safe account" at once. Under pressure, she approves the transfer. Within minutes the money has passed through several accounts, and the bank can at best freeze whatever is left.</p>
+<p><b>The idea.</b> Watermarked money brings the verification concept of this paper to digital money itself. Every unit of digital money, down to one paisa, gets an ID when it is issued and carries a small watermark: who owns it now, its last few owners, the payment that moved it last, and whether that payment is still settling or already final. Money moves only when the verification set for that payment's level is present, and the owner sets these levels once with their bank (Figure 8). Context counts as proof: paying her own insurance renewal, an instalment on her own loan or a bill from a shop she buys from needs only her swipe, whatever the amount. A large payment to someone new, with no context, needs two more humans in the loop, chosen by her in advance or even different approval steps.</p>
+<figure id="fig8">
+<svg viewBox="0 0 840 450" role="img" aria-label="Watermarked money: every unit carries a watermark naming its owner, payments need the verification set for their level, a scam payment waits for a trusted contact who declines it, and money moved by fraud can be restored">
+<defs>
+<marker id="w8-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#3a3a3e"></path></marker>
+<g id="w8-seal"><circle r="8" fill="#24685a"></circle><path d="M-3.6 0.2l2.4 2.4 4.6-5" stroke="#ffffff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></g>
+</defs>
+<g font-family="Nunito,system-ui,-apple-system,'Segoe UI',sans-serif">
+
+<!-- 1. The watermark on one unit -->
+<text x="4" y="20" font-size="15" font-weight="700" fill="#1d1d1f">1. Every unit carries a watermark</text>
+<rect x="4" y="32" width="300" height="172" rx="10" fill="#fbf4ec" stroke="#9a4f12" stroke-width="1.4"></rect>
+<text x="18" y="56" font-size="10.5" font-weight="800" letter-spacing=".06em" fill="#9a4f12">ONE UNIT OF MONEY</text>
+<use href="#w8-seal" x="288" y="52"></use>
+<text x="18" y="80" font-size="13.5" font-weight="700" fill="#1d1d1f">₹1 · unit ID 7F3A-21C9</text>
+<text x="18" y="104" font-size="12" fill="#5b5b60">owner</text><text x="118" y="104" font-size="12.5" fill="#1d1d1f">Lakshmi Menon</text>
+<line x1="16" y1="112" x2="292" y2="112" stroke="#ead9c6"></line>
+<text x="18" y="130" font-size="12" fill="#5b5b60">earlier owners</text><text x="118" y="130" font-size="12.5" fill="#1d1d1f">State Pension Office, …</text>
+<line x1="16" y1="138" x2="292" y2="138" stroke="#ead9c6"></line>
+<text x="18" y="156" font-size="12" fill="#5b5b60">moved last by</text><text x="118" y="156" font-size="12.5" fill="#1d1d1f">pension, 1 November</text>
+<line x1="16" y1="164" x2="292" y2="164" stroke="#ead9c6"></line>
+<text x="18" y="182" font-size="12" fill="#5b5b60">status</text><text x="118" y="182" font-size="12.5" font-weight="700" fill="#24685a">final</text>
+<text x="200" y="182" font-size="11.5" fill="#5b5b60">(or: settling)</text>
+
+<!-- 2. Her levels -->
+<text x="328" y="20" font-size="15" font-weight="700" fill="#1d1d1f">2. Each payment needs the verification for its level</text>
+<rect x="328" y="32" width="508" height="172" rx="10" fill="#eef3f8" stroke="#2c5a85" stroke-width="1.4"></rect>
+<text x="342" y="56" font-size="10.5" font-weight="800" letter-spacing=".06em" fill="#2c5a85">LAKSHMI’S LEVELS, SET ONCE WITH HER BANK</text>
+<text x="342" y="84" font-size="12.5" fill="#1d1d1f">Everyday payments, up to ₹10,000</text><text x="822" y="84" font-size="12.5" font-weight="700" fill="#1d1d1f" text-anchor="end">her swipe</text>
+<line x1="340" y1="94" x2="824" y2="94" stroke="#d3dfeb"></line>
+<text x="342" y="114" font-size="12.5" fill="#1d1d1f">Her own bills, loan instalments, insurance</text><text x="822" y="114" font-size="12.5" font-weight="700" fill="#1d1d1f" text-anchor="end">her swipe: context is proof</text>
+<line x1="340" y1="124" x2="824" y2="124" stroke="#d3dfeb"></line>
+<text x="342" y="144" font-size="12.5" fill="#1d1d1f">Large, to someone new, no context</text><text x="822" y="144" font-size="12.5" font-weight="700" fill="#1d1d1f" text-anchor="end">her swipe + two trusted contacts</text>
+<line x1="340" y1="154" x2="824" y2="154" stroke="#d3dfeb"></line>
+<text x="342" y="174" font-size="12.5" fill="#1d1d1f">From a company account</text><text x="822" y="174" font-size="12.5" font-weight="700" fill="#1d1d1f" text-anchor="end">role signatures</text>
+<text x="342" y="196" font-size="11" fill="#5b5b60">Trusted contacts: her son Arjun, her daughter, a close friend</text>
+
+<!-- 3. The scam call -->
+<text x="4" y="238" font-size="15" font-weight="700" fill="#1d1d1f">3. A scam call that fails</text>
+<rect x="4" y="250" width="184" height="96" rx="10" fill="#ffffff" stroke="#3a3a3e" stroke-width="1.4"></rect>
+<text x="96" y="274" font-size="13" font-weight="700" fill="#1d1d1f" text-anchor="middle">A “bank fraud team”</text>
+<text x="96" y="294" font-size="12" fill="#1d1d1f" text-anchor="middle">calls: “move ₹2,00,000</text>
+<text x="96" y="311" font-size="12" fill="#1d1d1f" text-anchor="middle">to a safe account, now”</text>
+<text x="96" y="332" font-size="11" fill="#5b5b60" text-anchor="middle">a new account, no context</text>
+<path d="M190 298L216 298" fill="none" stroke="#3a3a3e" stroke-width="2" marker-end="url(#w8-a)"></path>
+<rect x="220" y="250" width="184" height="96" rx="10" fill="#eef3f8" stroke="#2c5a85" stroke-width="1.4"></rect>
+<text x="312" y="274" font-size="13" font-weight="700" fill="#2c5a85" text-anchor="middle">Lakshmi swipes</text>
+<text x="312" y="294" font-size="12" fill="#1d1d1f" text-anchor="middle">the payment waits:</text>
+<text x="312" y="311" font-size="12" fill="#1d1d1f" text-anchor="middle">this level needs two</text>
+<text x="312" y="328" font-size="12" fill="#1d1d1f" text-anchor="middle">trusted contacts</text>
+<path d="M406 298L432 298" fill="none" stroke="#3a3a3e" stroke-width="2" marker-end="url(#w8-a)"></path>
+<rect x="436" y="250" width="184" height="96" rx="10" fill="#eef3f8" stroke="#2c5a85" stroke-width="1.4"></rect>
+<text x="528" y="274" font-size="13" font-weight="700" fill="#2c5a85" text-anchor="middle">2 Relatives need to approve</text>
+<text x="528" y="294" font-size="12" fill="#1d1d1f" text-anchor="middle">they call her, hears about</text>
+<text x="528" y="311" font-size="12" fill="#1d1d1f" text-anchor="middle">the “safe account”,</text>
+<text x="528" y="328" font-size="12" fill="#1d1d1f" text-anchor="middle">do not approve and decline</text>
+<path d="M622 298L648 298" fill="none" stroke="#3a3a3e" stroke-width="2" marker-end="url(#w8-a)"></path>
+<rect x="652" y="250" width="184" height="96" rx="10" fill="#edf5f2" stroke="#24685a" stroke-width="1.4"></rect>
+<text x="744" y="274" font-size="13" font-weight="700" fill="#24685a" text-anchor="middle">Nothing moves</text>
+<text x="744" y="294" font-size="12" fill="#1d1d1f" text-anchor="middle">the money stays hers,</text>
+<text x="744" y="311" font-size="12" fill="#1d1d1f" text-anchor="middle">and the receiving</text>
+<text x="744" y="328" font-size="12" fill="#1d1d1f" text-anchor="middle">account is reported</text>
+
+<!-- 4. If it had moved -->
+<rect x="4" y="362" width="832" height="82" rx="10" fill="#ffffff" stroke="#b9b3a6" stroke-width="1.5" stroke-dasharray="6 5"></rect>
+<text x="18" y="386" font-size="13" font-weight="700" fill="#1d1d1f">4. If money had moved by fraud</text>
+<text x="18" y="410" font-size="12.5" fill="#1d1d1f">The transaction can be reported while the payment is still settling → her bank’s fraud officer and a police officer each verify, in role</text>
+<text x="18" y="430" font-size="12.5" fill="#1d1d1f">→ the fraud’s watermarks expire, and Lakshmi’s watermark returns on the same unit IDs, wherever the money went</text>
+</g>
+</svg>
+<figcaption><b>Figure 8.</b> Watermarked money. Every unit carries a watermark naming its owner and the payment that moved it last. Each payment needs the verification set for its level, so a scam payment to a new account waits for two of Lakshmi's trusted contacts, who decline it. If money had moved by fraud, two officers verify the case using their roles, and they can decline and her watermark is restored on the same money units.</figcaption>
+</figure>
+<p><b>What happens.</b> When Lakshmi set her levels, she chose three trusted contacts: her son Arjun, her daughter and a close friend. When she swipes to send ₹2,00,000 to an account she has never paid before, the payment waits, and Arjun's agent shows him: "Your mother is sending ₹2,00,000 to a new account. Call her before you approve." He calls her, hears the story about the safe account, and declines. Nothing moves, and the receiving account is reported. The caller won her trust for a few minutes, but he could not get her son's verification.</p>
+<p><b>If the money had moved.</b> Suppose the scammer had fooled Arjun as well, or money had moved without valid verification in some other way. Payments take an hour or two to become final, and anyone receiving the units can see that they are still settling. During that time Lakshmi can report the fraud. Her bank's fraud officer and a police cyber-crime officer each verify the case, in their roles. Once both have approved, the watermarks written by the fraudulent payment expire, and Lakshmi's watermark is restored on the same unit IDs, wherever the money has gone. A payment made with the owner's own verification and a real purpose cannot be undone by the payer afterwards, so shops and sellers are protected too.</p>
+<p><b>What changes.</b> A stolen PIN, password or phone is no longer enough to take someone's money, and a scam has to fool more than one person. When fraud does happen, the money can be traced and returned, because every unit carries a record of who owned it. As in every other workflow in this paper, each approval along the way is recorded.</p>
+
+<h2 id="s8">8. Conclusion</h2>
+<p>Agents will do most of the work in the processes that connect people and organisations, through workflow templates that every party shares. What agents cannot carry is authority. Authority belongs to people, in their own lives and in the roles their organisations give them. Part 1 gave each person a personal agent, and this paper gives each role a business agent. When the authorised people are the humans in the loop, each verifying their own part with their own signature, genuine processes become easy to complete and fraud-proof. Instead of chasing fraudsters who keep changing identities, anything without verification stands out. Adoption can start inside one company, grow to two organisations sharing a workflow, and then extend to public services.</p>
+
+<h2 id="refs">References</h2>
+<ol class="refs">
+<li>Tony Mathew (2026). <a href="https://tonymcodes.github.io/Agent-Middleground-Protocol/paper/">Agent Middleground Protocol (AMP)</a>. Part 1 of this series.</li>
+</ol>
+</article>
+
+</div>
+
+
+
+</body></html>

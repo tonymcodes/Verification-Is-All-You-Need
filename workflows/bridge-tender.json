@@ -1,0 +1,20 @@
+{
+  "name": "bridge-tender",
+  "title": "A sealed tender to build a bridge",
+  "runs": "in an Agent Middleground: bids stay sealed there, and only the results leave.",
+  "parties": {
+    "office": { "is": "organisation", "title": "The city works office", "name": "City Works Office", "owns": true },
+    "bidder": { "is": "organisation", "title": "A bidding company", "many": true }
+  },
+  "steps": [
+    { "id": "bid", "party": "bidder", "role": "Authorised signatory", "kind": "approve", "does": "Submits the company's sealed bid", "important": true, "sealed": true,
+      "adds": { "price": "amount", "turnover": "amount", "licence": "text", "projects": "amount" } },
+    { "id": "result", "party": "office", "role": "Evaluation committee member", "kind": "approve", "does": "Approves the result worked out by the rules", "after": ["bid"], "count": 2, "important": true }
+  ],
+  "rules": {
+    "units": "prices and turnover in ₹ crore",
+    "eligible": { "turnoverAtLeast": 100, "licence": "Class A", "projectsAtLeast": 2 },
+    "score": "70 points for price (the lowest eligible price gets all 70), 30 points for similar projects done (6 per project, at most 30)"
+  },
+  "records": "The middle ground keeps a log of fingerprints only. After the result, the bids are wiped; each company keeps its own confirmation token."
+}

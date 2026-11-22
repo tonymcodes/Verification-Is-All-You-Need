@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use or build on this work, please cite it as below."
+title: "Verification Is All You Need"
+abstract: "Reimagining today's processes for the agent era as multi-party digital workflows, where authorised people are the humans in the loop who verify each part. Part 2 of the Agent Middleground Protocol (AMP) papers, with its sample code."
+authors:
+  - given-names: Tony
+    family-names: Mathew
+type: software
+version: "0.1.0"
+date-released: "2026-11-22"
+license: Apache-2.0
+url: "https://tonymcodes.github.io/Verification-Is-All-You-Need/paper/"
+repository-code: "https://github.com/tonymcodes/Verification-Is-All-You-Need"
+keywords:
+  - AI agents
+  - workflows
+  - human in the loop
+  - verification
